@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using System.Reflection.PortableExecutable;
 using Microsoft.Extensions.Logging;
+using Cours1_SGBD.Interfaces;
 
 namespace Cours1_SGBD.Repositories
 {
@@ -25,15 +26,18 @@ namespace Cours1_SGBD.Repositories
         return list;
     }
 }*/
-    public class CoursSGBDRepo
+    public class CoursSGBDRepo : ICoursSGBDRepo
     {
         private readonly string _connectionString = "Server=CUTE59\\SQL_EPS;Database=SGBD_C;User Id=PRO;Password=;TrustServerCertificate=True";
+
         private readonly ILogger _logger;
 
-        public CoursSGBDRepo(ILogger logger)
+        public CoursSGBDRepo(ILoggerFactory logger)
         {
-            _logger = logger;
-        }   
+            _logger = logger.CreateLogger("SQL_Connection");
+        }
+
+
 
         public List<Student> GetStudents()
         {
@@ -50,6 +54,7 @@ namespace Cours1_SGBD.Repositories
                     //throw;
                     return students;
                 }
+
 
                 string query = "SELECT * FROM Students";
                 using (var command = new SqlCommand(query, connection))
@@ -74,4 +79,6 @@ namespace Cours1_SGBD.Repositories
             return students;
         }
     }
+
+
 }

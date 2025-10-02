@@ -1,4 +1,5 @@
-﻿using Cours1_SGBD.Models;
+﻿using Cours1_SGBD.Interfaces;
+using Cours1_SGBD.Models;
 using Cours1_SGBD.Repositories;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace Cours1_SGBD.Services
 {
-    public class StudentService
+    public class StudentService : IStudentService
     {
         private readonly CoursSGBDRepo _repo;
 
-        public StudentService()
+        public StudentService(ILogger<StudentService> logger, ICoursSGBDRepo coursSGBDRepo)
         {
-            _repo = new CoursSGBDRepo(LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("SQL_Exception"));
+            _repo = (CoursSGBDRepo?)coursSGBDRepo;
         }
 
         public List<Student> GetStudents()
