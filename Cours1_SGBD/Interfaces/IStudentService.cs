@@ -8,6 +8,6 @@ namespace Cours1_SGBD.Interfaces
 {
     public interface IStudentService
     {
-        List<Cours1_SGBD.Models.Student> GetStudents();
+        List<Cours1_SGBD.Models.Student> GetStudentsSvc();
     }
 }

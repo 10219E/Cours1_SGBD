@@ -26,15 +26,15 @@ namespace Cours1_SGBD
         public static void Main(string[] args)
         {
             using var serviceProvider = ConfigureServices();
-
-            var loggerF = serviceProvider.GetService<ILoggerFactory>();
-            var logger = loggerF.CreateLogger("My SGBD Program");
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+            //var loggerF = serviceProvider.GetService<ILoggerFactory>();
+            //var logger = loggerF.CreateLogger("My SGBD Program");
 
             var studentService = serviceProvider.GetRequiredService<IStudentService>();
             //_repo = new CoursSGBDRepo(LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("SQL_Exception"));
 
             logger.LogInformation("Application Starting");
-            student = studentService.GetStudents();
+            student = studentService.GetStudentsSvc();
 
             foreach (var student in student)
             {

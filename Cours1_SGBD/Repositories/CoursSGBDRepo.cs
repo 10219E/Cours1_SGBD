@@ -32,14 +32,14 @@ namespace Cours1_SGBD.Repositories
 
         private readonly ILogger _logger;
 
-        public CoursSGBDRepo(ILoggerFactory logger)
+        public CoursSGBDRepo(ILogger<CoursSGBDRepo> logger)
         {
-            _logger = logger.CreateLogger("SQL_Connection");
+            _logger = logger;
         }
 
 
 
-        public List<Student> GetStudents()
+        public List<Student> GetStudentsDb()
         {
             var students = new List<Student>();
             using (var connection = new SqlConnection(_connectionString))

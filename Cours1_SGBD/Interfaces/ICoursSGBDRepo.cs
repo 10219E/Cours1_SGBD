@@ -8,6 +8,6 @@ namespace Cours1_SGBD.Interfaces
 {
     public interface ICoursSGBDRepo
     {
-        List<Cours1_SGBD.Models.Student> GetStudents();
+        List<Cours1_SGBD.Models.Student> GetStudentsDb();
     }
 }
