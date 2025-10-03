@@ -32,11 +32,44 @@ namespace Cours1_SGBD.Repositories
 
         private readonly ILogger _logger;
 
-        public CoursSGBDRepo(ILogger<CoursSGBDRepo> logger)
+        public CoursSGBDRepo(ILoggerFactory logger)
         {
-            _logger = logger;
+            _logger = logger.CreateLogger("SQL_Connection");
         }
 
+        public void InsertStudentDb(StudentsToInsert insert_student)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                string query = "INSERT INTO Students ([First Name], [Last Name], [E-mail], [Mobile], [Confirmed], [Section]) " +
+                               "VALUES (@FirstName, @LastName, @Email, @Mobile, @Confirmed, @Section)";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@FirstName", insert_student.fname);
+                    command.Parameters.AddWithValue("@LastName", insert_student.lname);
+                    command.Parameters.AddWithValue("@Email", insert_student.email);
+                    command.Parameters.AddWithValue("@Mobile", insert_student.phone);
+                    command.Parameters.AddWithValue("@Confirmed", insert_student.confirmed);
+                    command.Parameters.AddWithValue("@Section", insert_student.section);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteStudentDb(int id)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                string query = "DELETE FROM Students WHERE ID = @ID";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@ID", id);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
 
 
         public List<Student> GetStudentsDb()

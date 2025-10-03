@@ -14,7 +14,7 @@ namespace Cours1_SGBD.Services
     {
         private readonly CoursSGBDRepo _repo;
 
-        public StudentService(ILogger<StudentService> logger, ICoursSGBDRepo coursSGBDRepo)
+        public StudentService(ICoursSGBDRepo coursSGBDRepo)
         {
             _repo = (CoursSGBDRepo?)coursSGBDRepo;
         }
@@ -23,6 +23,28 @@ namespace Cours1_SGBD.Services
         {
             List<Student> students = _repo.GetStudentsDb();
             return students;
+        }
+
+        public void InsertStudentSvc(StudentsToInsert insertStudent)
+        {
+            // You must map this to a real Student model if your DB expects it
+            var insert_student = new StudentsToInsert
+            {
+                fname = insertStudent.fname,
+                lname = insertStudent.lname,
+                email = insertStudent.email,
+                phone = insertStudent.phone,
+                confirmed = insertStudent.confirmed,
+                section = insertStudent.section
+            };
+
+            _repo.InsertStudentDb(insert_student);
+        }
+
+
+        public void DeleteStudentSvc(int id)
+        {
+            _repo.DeleteStudentDb(id);
         }
     }
 }
