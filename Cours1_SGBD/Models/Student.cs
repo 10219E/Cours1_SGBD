@@ -11,7 +11,7 @@ namespace Cours1_SGBD.Models
     {
         internal string lname;
         internal string fname;
-        internal string id;
+        internal int id;
         internal string email;
         internal string phone;
         internal DateTime confirmed;

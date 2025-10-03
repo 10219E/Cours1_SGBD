@@ -24,6 +24,19 @@ namespace Cours1_SGBD.Services
             List<Student> students = _repo.GetStudentsDb();
             return students;
         }
+        
+        public void UpdateStudentSvc(int id, StudentUpdate updatedStudent)
+        {
+            var studentToUpdate = new StudentUpdate
+            {
+                fname = updatedStudent.fname,
+                lname = updatedStudent.lname,
+                email = updatedStudent.email,
+                phone = updatedStudent.phone,
+                section = updatedStudent.section
+            };
+            _repo.UpdateStudentDb(id, studentToUpdate);
+        }
 
         public void InsertStudentSvc(StudentsToInsert insertStudent)
         {

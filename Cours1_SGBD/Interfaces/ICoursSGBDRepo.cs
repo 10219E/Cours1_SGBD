@@ -13,5 +13,7 @@ namespace Cours1_SGBD.Interfaces
         void InsertStudentDb(Cours1_SGBD.Models.StudentsToInsert insert_student);
 
         void DeleteStudentDb(int id);
+
+        void UpdateStudentDb(int id, Cours1_SGBD.Models.StudentUpdate student);
     }
 }

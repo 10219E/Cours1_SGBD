@@ -23,6 +23,7 @@ namespace Cours1_SGBD
     {
         private static List<Student> student;
         private static List<StudentsToInsert> insert_student;
+        private static List<StudentUpdate> fields_toupdate;
 
         public static void Main(string[] args)
         {
@@ -46,12 +47,12 @@ namespace Cours1_SGBD
             //INSERT
             var insert_student = new StudentsToInsert
             {
-                fname = "Nana",
-                lname = "Mocha",
-                email = "nmocha@ep.com",
-                phone = "+32002921113",
+                fname = "Roma",
+                lname = "Crop",
+                email = "rcrop@ep.com",
+                phone = "+320011222113",
                 confirmed = DateTime.Today,
-                section = "IT1"
+                section = "MB2"
             };
 
             studentService.InsertStudentSvc(insert_student);
@@ -61,6 +62,16 @@ namespace Cours1_SGBD
 
 
             logger.LogInformation("Application Ending");
+
+
+            //UPDATE
+            var fields_toupdate = new StudentUpdate
+            {
+                email = "crobert@ephec.be"
+            };
+
+            studentService.UpdateStudentSvc(7, fields_toupdate);
+
 
         }
 

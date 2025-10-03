@@ -37,6 +37,97 @@ namespace Cours1_SGBD.Repositories
             _logger = logger.CreateLogger("SQL_Connection");
         }
 
+
+        public List<Student> GetStudentsDb()
+        {
+            var students = new List<Student>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try {                     
+                    _logger.LogInformation("Attempting to open database connection.");
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error while trying to open database connection.");
+                    //throw;
+                    return students;
+                }
+
+
+                string query = "SELECT * FROM Students";
+                using (var command = new SqlCommand(query, connection))
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var student = new Student
+                        {
+                            id = (int)reader["ID"],
+                            fname = reader["First Name"].ToString(),
+                            lname = reader["Last Name"].ToString(),
+                            email = reader["E-mail"].ToString(),
+                            phone = reader["Mobile"].ToString(),
+                            confirmed = Convert.ToDateTime(reader["Confirmed"]),
+                            section = reader["Section"].ToString()
+                        };
+                        students.Add(student);
+                    }
+                }
+            }
+            return students;
+        }
+
+        public void UpdateStudentDb(int id, StudentUpdate update_student)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                var updates = new List<string>();
+                var command = new SqlCommand();
+                command.Connection = connection;
+
+                if (update_student.fname != null)
+                {
+                    updates.Add("[First Name] = @FirstName");
+                    command.Parameters.AddWithValue("@FirstName", update_student.fname);
+                }
+
+                if (update_student.lname != null)
+                {
+                    updates.Add("[Last Name] = @LastName");
+                    command.Parameters.AddWithValue("@LastName", update_student.lname);
+                }
+
+                if (update_student.email != null)
+                {
+                    updates.Add("[E-mail] = @Email");
+                    command.Parameters.AddWithValue("@Email", update_student.email);
+                }
+
+                if (update_student.phone != null)
+                {
+                    updates.Add("[Mobile] = @Mobile");
+                    command.Parameters.AddWithValue("@Mobile", update_student.phone);
+                }
+
+                if (update_student.section != null)
+                {
+                    updates.Add("[Section] = @Section");
+                    command.Parameters.AddWithValue("@Section", update_student.section);
+                }
+
+                string setClause = string.Join(", ", updates);
+                string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
+                command.CommandText = query;
+                command.Parameters.AddWithValue("@ID", id);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+
         public void InsertStudentDb(StudentsToInsert insert_student)
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -71,46 +162,6 @@ namespace Cours1_SGBD.Repositories
             }
         }
 
-
-        public List<Student> GetStudentsDb()
-        {
-            var students = new List<Student>();
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                try {                     
-                    _logger.LogInformation("Attempting to open database connection.");
-                    connection.Open();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("Error while trying to open database connection.");
-                    //throw;
-                    return students;
-                }
-
-
-                string query = "SELECT * FROM Students";
-                using (var command = new SqlCommand(query, connection))
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var student = new Student
-                        {
-                            id = reader["ID"].ToString(),
-                            fname = reader["First Name"].ToString(),
-                            lname = reader["Last Name"].ToString(),
-                            email = reader["E-mail"].ToString(),
-                            phone = reader["Mobile"].ToString(),
-                            confirmed = Convert.ToDateTime(reader["Confirmed"]),
-                            section = reader["Section"].ToString()
-                        };
-                        students.Add(student);
-                    }
-                }
-            }
-            return students;
-        }
     }
 
 
