@@ -9,5 +9,9 @@ namespace Cours1_SGBD.Interfaces
     public interface ICoursSGBDRepo
     {
         List<Cours1_SGBD.Models.Student> GetStudentsDb();
+
+        void InsertStudentDb(Cours1_SGBD.Models.StudentsToInsert insert_student);
+
+        void DeleteStudentDb(int id);
     }
 }

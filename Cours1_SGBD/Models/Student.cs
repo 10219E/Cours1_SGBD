@@ -15,6 +15,6 @@ namespace Cours1_SGBD.Models
         internal string email;
         internal string phone;
         internal DateTime confirmed;
-        internal object section;
+        internal string section;
     }
 }
