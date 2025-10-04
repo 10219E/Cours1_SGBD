@@ -26,9 +26,10 @@ namespace Cours1_SGBD.Repositories
         return list;
     }
 }*/
-    public class CoursSGBDRepo : ICoursSGBDRepo
+    public class CoursSGBDRepo : GetFile, ICoursSGBDRepo
     {
-        private readonly string _connectionString = "Server=CUTE59\\SQL_EPS;Database=SGBD_C;User Id=PRO;Password=;TrustServerCertificate=True";
+
+        private readonly string _connectionString = GetFileContent("Cours1_SGBD.Repositories.ConnectionString.txt");
 
         private readonly ILogger _logger;
 
@@ -54,8 +55,7 @@ namespace Cours1_SGBD.Repositories
                     return students;
                 }
 
-
-                string query = "SELECT * FROM Students";
+                string query = GetFileContent("Cours1_SGBD.Repositories.LIST_STUDENTS.sql");
                 using (var command = new SqlCommand(query, connection))
                 using (var reader = command.ExecuteReader())
                 {
@@ -119,8 +119,13 @@ namespace Cours1_SGBD.Repositories
                 }
 
                 string setClause = string.Join(", ", updates);
-                string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
-                command.CommandText = query;
+                string query = GetFileContent("Cours1_SGBD.Repositories.UPDATE_STUDENT.sql");
+                
+                //Appending (by using replace) SetClause in the file string
+                string aquery = query.Replace("{SET_CLAUSE}", setClause);   
+
+                //string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
+                command.CommandText = aquery;
                 command.Parameters.AddWithValue("@ID", id);
 
                 command.ExecuteNonQuery();
@@ -132,9 +137,9 @@ namespace Cours1_SGBD.Repositories
         {
             using (var connection = new SqlConnection(_connectionString))
             {
+
                 connection.Open();
-                string query = "INSERT INTO Students ([First Name], [Last Name], [E-mail], [Mobile], [Confirmed], [Section]) " +
-                               "VALUES (@FirstName, @LastName, @Email, @Mobile, @Confirmed, @Section)";
+                string query = GetFileContent("Cours1_SGBD.Repositories.INSERT_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@FirstName", insert_student.fname);
@@ -153,7 +158,7 @@ namespace Cours1_SGBD.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                string query = "DELETE FROM Students WHERE ID = @ID";
+                string query = GetFileContent("Cours1_SGBD.Repositories.DELETE_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@ID", id);

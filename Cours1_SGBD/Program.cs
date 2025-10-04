@@ -58,7 +58,7 @@ namespace Cours1_SGBD
             studentService.InsertStudentSvc(insert_student);
 
             //DELETE
-            studentService.DeleteStudentSvc(8);
+            studentService.DeleteStudentSvc(111);
 
 
             logger.LogInformation("Application Ending");
@@ -70,7 +70,7 @@ namespace Cours1_SGBD
                 email = "crobert@ephec.be"
             };
 
-            studentService.UpdateStudentSvc(7, fields_toupdate);
+            studentService.UpdateStudentSvc(4, fields_toupdate);
 
 
         }
