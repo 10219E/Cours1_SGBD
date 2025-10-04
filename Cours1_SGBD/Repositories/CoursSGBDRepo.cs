@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 using System.Reflection.PortableExecutable;
 using Microsoft.Extensions.Logging;
 using Cours1_SGBD.Interfaces;
+using System.Data;
 
 namespace Cours1_SGBD.Repositories
 {
@@ -26,9 +27,10 @@ namespace Cours1_SGBD.Repositories
         return list;
     }
 }*/
-    public class CoursSGBDRepo : ICoursSGBDRepo
+    public class CoursSGBDRepo : GetFile, ICoursSGBDRepo
     {
-        private readonly string _connectionString = "Server=CUTE59\\SQL_EPS;Database=SGBD_C;User Id=PRO;Password=;TrustServerCertificate=True";
+
+        private readonly string _connectionString = GetFileContent("Cours1_SGBD.Repositories.ConnectionString.txt");
 
         private readonly ILogger _logger;
 
@@ -37,25 +39,57 @@ namespace Cours1_SGBD.Repositories
             _logger = logger.CreateLogger("SQL_Connection");
         }
 
+        private SqlConnection OpenConnection() //Opening connection in a separate method to avoid code duplication
+        {
+            var connection = new SqlConnection(_connectionString);
+            
+            try
+            {
+                _logger.LogInformation("Attempting to open database connection.");
+                connection.Open();
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error while trying to open database connection.");
+                connection.Dispose();
+                return null;
+                //throw;
+            }
+            
+        }
+
 
         public List<Student> GetStudentsDb()
         {
             var students = new List<Student>();
-            using (var connection = new SqlConnection(_connectionString))
+            //using (var connection = new SqlConnection(_connectionString))
+            //{
+            /*try {                     
+                _logger.LogInformation("Attempting to open database connection.");
+                connection.Open();
+            }
+            catch (Exception ex)
             {
-                try {                     
-                    _logger.LogInformation("Attempting to open database connection.");
-                    connection.Open();
-                }
-                catch (Exception ex)
+                _logger.LogError("Error while trying to open database connection.");
+                //throw;
+                return students;
+            }*/
+
+            using (var connection = OpenConnection())
+            {
+                if (connection == null)
                 {
-                    _logger.LogError("Error while trying to open database connection.");
-                    //throw;
-                    return students;
+                        return students; // Return empty list if connection failed
+                }
+                else
+                {
+                    _logger.LogInformation("Database connection opened successfully.");
                 }
 
 
-                string query = "SELECT * FROM Students";
+
+                string query = GetFileContent("Cours1_SGBD.Repositories.LIST_STUDENTS.sql");
                 using (var command = new SqlCommand(query, connection))
                 using (var reader = command.ExecuteReader())
                 {
@@ -73,16 +107,21 @@ namespace Cours1_SGBD.Repositories
                         };
                         students.Add(student);
                     }
+                    //}
                 }
+                return students;
             }
-            return students;
         }
 
         public void UpdateStudentDb(int id, StudentUpdate update_student)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            using (var connection = OpenConnection())
             {
-                connection.Open();
+                if (connection != null)
+                    {
+                    _logger.LogInformation("Database connection opened successfully.");
+                } //No return here as void method
+
 
                 var updates = new List<string>();
                 var command = new SqlCommand();
@@ -119,22 +158,39 @@ namespace Cours1_SGBD.Repositories
                 }
 
                 string setClause = string.Join(", ", updates);
-                string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
-                command.CommandText = query;
+                string query = GetFileContent("Cours1_SGBD.Repositories.UPDATE_STUDENT.sql");
+                
+                //Appending (by using replace) SetClause in the file string
+                string aquery = query.Replace("{SET_CLAUSE}", setClause);   
+
+                //string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
+                command.CommandText = aquery;
                 command.Parameters.AddWithValue("@ID", id);
 
-                command.ExecuteNonQuery();
+                int rows_affected = command.ExecuteNonQuery();
+                if (rows_affected == 0)
+                {
+                    _logger.LogWarning($"No student found with ID {id} to update.");
+                }
+                else
+                {
+                    _logger.LogInformation($"Student with ID {id} updated successfully.");
+                }
             }
         }
 
 
         public void InsertStudentDb(StudentsToInsert insert_student)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            using (var connection = OpenConnection())
             {
-                connection.Open();
-                string query = "INSERT INTO Students ([First Name], [Last Name], [E-mail], [Mobile], [Confirmed], [Section]) " +
-                               "VALUES (@FirstName, @LastName, @Email, @Mobile, @Confirmed, @Section)";
+                if (connection != null)
+                {
+                    _logger.LogInformation("Database connection opened successfully.");
+                }//No return here as void method
+
+
+                string query = GetFileContent("Cours1_SGBD.Repositories.INSERT_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@FirstName", insert_student.fname);
@@ -150,14 +206,29 @@ namespace Cours1_SGBD.Repositories
 
         public void DeleteStudentDb(int id)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            using (var connection = OpenConnection())
             {
-                connection.Open();
-                string query = "DELETE FROM Students WHERE ID = @ID";
+                if (connection != null)
+                {
+                    _logger.LogInformation("Database connection opened successfully.");
+                }//No return here as void method
+
+
+                string query = GetFileContent("Cours1_SGBD.Repositories.DELETE_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@ID", id);
-                    command.ExecuteNonQuery();
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        _logger.LogWarning($"No student found with ID {id} to delete.");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Student with ID {id} deleted successfully.");
+                    }
+
                 }
             }
         }

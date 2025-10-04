@@ -34,43 +34,105 @@ namespace Cours1_SGBD
             var studentService = serviceProvider.GetRequiredService<IStudentService>(); //CALL LOGGER INJECT
 
             logger.LogInformation("Application Starting");
-
-            //SELECT
-            student = studentService.GetStudentsSvc();
+            Thread.Sleep(50); //LET LOGGER PRINT BEFORE OTHER THINGS
 
 
-            foreach (var student in student)
+
+
+            //USER CHOICE
+            bool choice_running = true;
+
+
+            while (choice_running)
             {
-                Console.WriteLine($"ID: {student.id}, First Name: {student.fname}, Last Name: {student.lname}, Section: {student.section}");
-            }
 
-            //INSERT
-            var insert_student = new StudentsToInsert
-            {
-                fname = "Roma",
-                lname = "Crop",
-                email = "rcrop@ep.com",
-                phone = "+320011222113",
-                confirmed = DateTime.Today,
-                section = "MB2"
-            };
+                Console.WriteLine("Choose an operation:");
+                Console.WriteLine("1 - View All Students (SELECT)");
+                Console.WriteLine("2 - Insert New Student (INSERT)");
+                Console.WriteLine("3 - Delete Student (DELETE)");
+                Console.WriteLine("4 - Update Student (UPDATE)");
+                Console.WriteLine("0 - Exit");
 
-            studentService.InsertStudentSvc(insert_student);
+                Console.Write("Enter your choice: ");
+                var input = Console.ReadLine();
+                if (!new[] { "0", "1", "2", "3", "4" }.Contains(input))  //ARRAY WITH POSSIBLE CHOICES - SHORTER THAN OR, AND, ETC
+                {
+                    Console.WriteLine("Invalid choice. Please select the correct option.");
+                    continue; // Skip the rest of the loop and prompt again
+                }
 
-            //DELETE
-            studentService.DeleteStudentSvc(8);
 
+                try
+                {
+
+                    switch (input)
+                    {
+                        //EXIT
+                        case "0":
+                            choice_running = false;
+                            break;
+
+                        //SELECT
+                        case "1":
+
+                            student = studentService.GetStudentsSvc();
+
+                            logger.LogInformation("Retrieved all students from the database.");
+                            foreach (var student in student)
+                            {
+                                Console.WriteLine($"ID: {student.id}, First Name: {student.fname}, Last Name: {student.lname}, Section: {student.section}");
+                            }
+                            break;
+
+                        //INSERT
+                        case "2":
+                            var insert_student = new StudentsToInsert
+                            {
+                                fname = "Roma",
+                                lname = "Crop",
+                                email = "rcrop@ep.com",
+                                phone = "+320011222113",
+                                confirmed = DateTime.Today,
+                                section = "MB2"
+                            };
+
+                            logger.LogInformation($"Inserting new student: {insert_student.fname} {insert_student.lname}");
+                            studentService.InsertStudentSvc(insert_student);
+                            break;
+
+                        //DELETE
+                        case "3":
+                            int id_to_delete = 111;
+
+                            logger.LogInformation($"Deleting student with ID {id_to_delete}");
+                            studentService.DeleteStudentSvc(id_to_delete);
+                            break;
+
+
+                        //UPDATE
+                        case "4":
+                            int id = 2;
+                            var fields_toupdate = new StudentUpdate
+                            {
+                                email = "pmlkv@ephec.be",
+                                phone = "+32499887711166"
+                            };
+
+                            logger.LogInformation($"Updating student with ID {id}");
+
+                            studentService.UpdateStudentSvc(id, fields_toupdate);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "An error occurred during operation.");
+                    Console.WriteLine($"An error occurred: {ex.Message}");
+                }
+
+            }///
 
             logger.LogInformation("Application Ending");
-
-
-            //UPDATE
-            var fields_toupdate = new StudentUpdate
-            {
-                email = "crobert@ephec.be"
-            };
-
-            studentService.UpdateStudentSvc(7, fields_toupdate);
 
 
         }
