@@ -30,7 +30,7 @@ namespace Cours1_SGBD.Repositories
     public class CoursSGBDRepo : GetFile, ICoursSGBDRepo
     {
 
-        private readonly string _connectionString = GetFileContent("Cours1_SGBD.Repositories.ConnectionString.txt");
+        private readonly string _connectionString = GetFileContent("Cours1_SGBD.Repositories.SQL.ConnectionString.txt");
 
         private readonly ILogger _logger;
 
@@ -60,22 +60,79 @@ namespace Cours1_SGBD.Repositories
         }
 
 
-        public List<Student> GetStudentsDb()
+        public List<UI_Student> FindStudentDb(string search)
         {
-            var students = new List<Student>();
-            //using (var connection = new SqlConnection(_connectionString))
-            //{
-            /*try {                     
-                _logger.LogInformation("Attempting to open database connection.");
-                connection.Open();
-            }
-            catch (Exception ex)
+            var single_student = new List<UI_Student>();
+            using (var connection = OpenConnection())
             {
-                _logger.LogError("Error while trying to open database connection.");
-                //throw;
-                return students;
-            }*/
+                if (connection == null)
+                {
+                    return single_student; // Return empty list if connection failed
+                }
+                else
+                {
+                    _logger.LogInformation("Database connection opened successfully.");
+                }
 
+
+
+                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.FIND_STUDENT.sql");
+                using (var command = new SqlCommand(query, connection))
+                { 
+                    if (!int.TryParse(search, out int search_id))
+                    {
+                        command.Parameters.AddWithValue("@FirstName", "%" + search + "%");
+                        command.Parameters.AddWithValue("@LastName", "%" + search + "%");
+                        command.Parameters.AddWithValue("@id", 0); //Dummy value, won't be used
+                    }
+                    else
+                    {
+
+                        command.Parameters.AddWithValue("@id", search_id); //using int conversion from the IF
+                        command.Parameters.AddWithValue("@FirstName", ""); //Dummy value, won't be used
+                        command.Parameters.AddWithValue("@LastName", ""); //Dummy value, won't be used
+                    }
+
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var student = new UI_Student
+                            {
+
+                                id = reader.GetInt32(reader.GetOrdinal("ID")),
+
+                                fname = reader.IsDBNull(reader.GetOrdinal("First Name"))
+                                     ? throw new Exception($"First name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
+                                     : reader.GetString(reader.GetOrdinal("First Name")),
+
+                                lname = reader.IsDBNull(reader.GetOrdinal("Last Name"))
+                                     ? throw new Exception($"Last name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
+                                     : reader.GetString(reader.GetOrdinal("Last Name")),
+
+                                //email = reader.GetString(reader.GetOrdinal("E-mail")),
+                                //phone = reader.GetString(reader.GetOrdinal("Mobile")),
+                                email = reader["E-mail"].ToString(),
+                                phone = reader["Mobile"].ToString(),
+                                confirmed = reader.GetDateTime(reader.GetOrdinal("Confirmed")),
+
+                                section = reader.IsDBNull(reader.GetOrdinal("Section"))
+                                     ? throw new Exception($"Section not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
+                                     : reader.GetString(reader.GetOrdinal("Section"))
+                            };
+                            single_student.Add(student);
+                        }
+                        //}
+                    }
+                }
+                return single_student;
+            }
+        }
+
+        public List<UI_Student> GetStudentsDb()
+        {
+            var students = new List<UI_Student>();
             using (var connection = OpenConnection())
             {
                 if (connection == null)
@@ -89,21 +146,43 @@ namespace Cours1_SGBD.Repositories
 
 
 
-                string query = GetFileContent("Cours1_SGBD.Repositories.LIST_STUDENTS.sql");
+                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.LIST_STUDENTS.sql");
                 using (var command = new SqlCommand(query, connection))
-                using (var reader = command.ExecuteReader())
+                using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        var student = new Student
+                        var student = new UI_Student
                         {
+                            /*
                             id = (int)reader["ID"],
                             fname = reader["First Name"].ToString(),
                             lname = reader["Last Name"].ToString(),
                             email = reader["E-mail"].ToString(),
                             phone = reader["Mobile"].ToString(),
                             confirmed = Convert.ToDateTime(reader["Confirmed"]),
-                            section = reader["Section"].ToString()
+                            section = reader["Section"] == DBNull.Value ? "" : reader["Section"].ToString()
+                            */
+
+                            id = reader.GetInt32(reader.GetOrdinal("ID")),
+
+                            fname = reader.IsDBNull(reader.GetOrdinal("First Name"))
+                                 ? throw new Exception($"First name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
+                                 : reader.GetString(reader.GetOrdinal("First Name")),
+
+                            lname = reader.IsDBNull(reader.GetOrdinal("Last Name"))
+                                 ? throw new Exception($"Last name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString() }")
+                                 : reader.GetString(reader.GetOrdinal("Last Name")),
+
+                            //email = reader.GetString(reader.GetOrdinal("E-mail")),
+                            //phone = reader.GetString(reader.GetOrdinal("Mobile")),
+                            email = reader["E-mail"].ToString(),
+                            phone = reader["Mobile"].ToString(),
+                            confirmed = reader.GetDateTime(reader.GetOrdinal("Confirmed")),
+
+                            section = reader.IsDBNull(reader.GetOrdinal("Section"))
+                                 ? throw new Exception($"Section not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString() }")
+                                 : reader.GetString(reader.GetOrdinal("Section"))
                         };
                         students.Add(student);
                     }
@@ -158,7 +237,7 @@ namespace Cours1_SGBD.Repositories
                 }
 
                 string setClause = string.Join(", ", updates);
-                string query = GetFileContent("Cours1_SGBD.Repositories.UPDATE_STUDENT.sql");
+                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.UPDATE_STUDENT.sql");
                 
                 //Appending (by using replace) SetClause in the file string
                 string aquery = query.Replace("{SET_CLAUSE}", setClause);   
@@ -190,7 +269,7 @@ namespace Cours1_SGBD.Repositories
                 }//No return here as void method
 
 
-                string query = GetFileContent("Cours1_SGBD.Repositories.INSERT_STUDENT.sql");
+                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.INSERT_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@FirstName", insert_student.fname);
@@ -214,7 +293,7 @@ namespace Cours1_SGBD.Repositories
                 }//No return here as void method
 
 
-                string query = GetFileContent("Cours1_SGBD.Repositories.DELETE_STUDENT.sql");
+                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.DELETE_STUDENT.sql");
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@ID", id);

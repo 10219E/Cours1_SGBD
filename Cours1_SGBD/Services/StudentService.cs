@@ -19,9 +19,15 @@ namespace Cours1_SGBD.Services
             _repo = (CoursSGBDRepo?)coursSGBDRepo;
         }
 
-        public List<Student> GetStudentsSvc()
+        public List<UI_Student> FindStudentDb(string search)
         {
-            List<Student> students = _repo.GetStudentsDb();
+            List<UI_Student> student = _repo.FindStudentDb(search);
+            return student;
+        }
+
+        public List<UI_Student> GetStudentsSvc()
+        {
+            List<UI_Student> students = _repo.GetStudentsDb();
             return students;
         }
         
