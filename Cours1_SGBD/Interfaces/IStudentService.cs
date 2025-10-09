@@ -8,7 +8,9 @@ namespace Cours1_SGBD.Interfaces
 {
     public interface IStudentService
     {
-        List<Cours1_SGBD.Models.Student> GetStudentsSvc();
+        List<Cours1_SGBD.Models.UI_Student> GetStudentsSvc();
+
+        List<Cours1_SGBD.Models.UI_Student> FindStudentDb(string search);
 
         void UpdateStudentSvc(int id, Cours1_SGBD.Models.StudentUpdate updatedStudent);
 
