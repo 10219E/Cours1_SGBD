@@ -37,7 +37,8 @@ namespace Cours1_SGBD
             Thread.Sleep(50); //LET LOGGER PRINT BEFORE OTHER THINGS
 
 
-
+            //VAR DECLARATION
+            var student_id = "";
 
             //USER CHOICE
             bool choice_running = true;
@@ -78,9 +79,9 @@ namespace Cours1_SGBD
                             student = studentService.GetStudentsSvc();
 
                             logger.LogInformation("Retrieved all students from the database.");
-                            foreach (var student in student)
+                            foreach (var stu in student)
                             {
-                                Console.WriteLine($"ID: {student.id}, First Name: {student.fname}, Last Name: {student.lname}, Section: {student.section}");
+                                Console.WriteLine($"ID: {stu.id}, First Name: {stu.fname}, Last Name: {stu.lname}, Section: {stu.section}");
                             }
                             break;
 
@@ -102,25 +103,54 @@ namespace Cours1_SGBD
 
                         //DELETE
                         case "3":
-                            int id_to_delete = 111;
+                            Console.Write("Enter the ID of the student to delete: ");
+                            student_id = Console.ReadLine();
+                            if (!int.TryParse(student_id, out var id_to_delete))
+                            {
+                                Console.WriteLine("Invalid ID. Delete cancelled.");
+                                break;
+                            }
 
                             logger.LogInformation($"Deleting student with ID {id_to_delete}");
                             studentService.DeleteStudentSvc(id_to_delete);
                             break;
+  
 
 
                         //UPDATE
                         case "4":
-                            int id = 2;
+                            Console.Write("Enter the ID of the student to update: ");
+                            student_id = Console.ReadLine();
+                            if (!int.TryParse(student_id, out var id_to_update))
+                            {
+                                Console.WriteLine("Invalid ID. Update cancelled.");
+                                break;
+                            }
+
+                            Console.WriteLine("Leave a field empty to keep its current value.");
+                            Console.Write("First name: ");
+                            var ufname = Console.ReadLine();
+                            Console.Write("Last name: ");
+                            var ulname = Console.ReadLine();
+                            Console.Write("E-mail: ");
+                            var uemail = Console.ReadLine();
+                            Console.Write("Phone: ");
+                            var uphone = Console.ReadLine();
+                            Console.Write("Section: ");
+                            var usection = Console.ReadLine();
+
                             var fields_toupdate = new StudentUpdate
                             {
-                                email = "pmlkv@ephec.be",
-                                phone = "+32499887711166"
+                                fname = string.IsNullOrWhiteSpace(ufname) ? null : ufname.Trim(),
+                                lname = string.IsNullOrWhiteSpace(ulname) ? null : ulname.Trim(),
+                                email = string.IsNullOrWhiteSpace(uemail) ? null : uemail.Trim(),
+                                phone = string.IsNullOrWhiteSpace(uphone) ? null : uphone.Trim(),
+                                section = string.IsNullOrWhiteSpace(usection) ? null : usection.Trim()
                             };
 
-                            logger.LogInformation($"Updating student with ID {id}");
+                            logger.LogInformation($"Updating student with ID {id_to_update}");
 
-                            studentService.UpdateStudentSvc(id, fields_toupdate);
+                            studentService.UpdateStudentSvc(id_to_update, fields_toupdate);
                             break;
                     }
                 }
@@ -148,5 +178,4 @@ namespace Cours1_SGBD
             return services.BuildServiceProvider();
         }
     }
-
 }
