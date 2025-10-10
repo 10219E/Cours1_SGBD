@@ -10,7 +10,7 @@ namespace Cours1_SGBD.Interfaces
     {
         List<Cours1_SGBD.Models.UI_Student> GetStudentsSvc();
 
-        List<Cours1_SGBD.Models.UI_Student> FindStudentDb(string search);
+        List<Cours1_SGBD.Models.UI_Student> FindStudentSvc(string search);
 
         void UpdateStudentSvc(int id, Cours1_SGBD.Models.StudentUpdate updatedStudent);
 

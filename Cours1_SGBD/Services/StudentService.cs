@@ -12,14 +12,14 @@ namespace Cours1_SGBD.Services
 {
     public class StudentService : IStudentService
     {
-        private readonly CoursSGBDRepo _repo;
+        private readonly ICoursSGBDRepo _repo;
 
         public StudentService(ICoursSGBDRepo coursSGBDRepo)
         {
-            _repo = (CoursSGBDRepo?)coursSGBDRepo;
+            _repo = coursSGBDRepo;
         }
 
-        public List<UI_Student> FindStudentDb(string search)
+        public List<UI_Student> FindStudentSvc(string search)
         {
             List<UI_Student> student = _repo.FindStudentDb(search);
             return student;

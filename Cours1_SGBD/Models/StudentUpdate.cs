@@ -8,10 +8,10 @@ namespace Cours1_SGBD.Models
 {
     public class StudentUpdate
     {
-        internal string? lname;
-        internal string? fname;
-        internal string? email;
-        internal string? phone;
-        internal string? section;
+        public string? lname;
+        public string? fname;
+        public string? email;
+        public string? phone;
+        public string? section;
     }
 }

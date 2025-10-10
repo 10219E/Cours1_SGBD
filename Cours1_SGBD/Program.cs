@@ -87,7 +87,7 @@ namespace Cours1_SGBD
                         case "2":
                             Console.Write("Enter search term (ID, First or Last name): ");
                             var search = Console.ReadLine() ?? string.Empty;
-                            var foundStudents = studentService.FindStudentDb(search);
+                            var foundStudents = studentService.FindStudentSvc(search);
                             if (foundStudents.Count == 0)
                             {
                                 Console.WriteLine("No students found matching the search criteria.");
