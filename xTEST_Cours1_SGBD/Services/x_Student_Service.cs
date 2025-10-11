@@ -23,7 +23,7 @@ namespace xTEST_Cours1_SGBD.Services
         IStudentService _service;
         private List<UI_Student> mock_students;
         private List<StudentsToInsert> mock_insert = new List<StudentsToInsert>();
-        private List<StudentUpdate> mock_update = new List<StudentUpdate>();
+
 
         public x_Student_Service()
         {
@@ -53,18 +53,6 @@ namespace xTEST_Cours1_SGBD.Services
                     section="B"
                 }
 
-            };
-
-            mock_update = new List<StudentUpdate>()
-            {
-                new StudentUpdate()
-                {
-                    fname="Jane",
-                    lname="Doe",
-                    email="jmark@mail.com",
-                    phone="+32209303",
-                    section="IT4"
-                }
             };
 
         }
@@ -175,7 +163,6 @@ namespace xTEST_Cours1_SGBD.Services
             Assert.Equal("Mark", mock_students.Single(s => s.id == 002).lname); //Check that the updated last name is Mark
 
             //Verify
-            //_mockService.Verify(repo => repo.UpdateStudentDb(id_toupdate, ), Times.Once);
             _mockService.Verify(repo => repo.UpdateStudentDb(
                 It.Is<int>(i => i == id_toupdate),
                 It.Is<StudentUpdate>(u => u.lname == updatedStudent.lname)
