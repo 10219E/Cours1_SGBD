@@ -16,9 +16,7 @@ concurrency:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  # If you have a solution file, set SOLUTION_PATH to it (example './Cours1_SGBD.sln').
-  # Otherwise keep it as repository root and restore specific projects below.
-  SOLUTION_PATH: '.' 
+  SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
 
 jobs:
@@ -41,7 +39,6 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      # Restore both projects explicitly so the restore job is meaningful as a status check
       - name: Restore main project
         run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj || true
 
@@ -68,7 +65,6 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      # Do not use --no-restore here — runner is independent and must restore if needed
       - name: Build (Release)
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
 
@@ -92,14 +88,8 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      # Let dotnet test restore / build as needed; do not rely on obj files from the restore job
       - name: Test (xTEST_Cours1_SGBD)
-        run: |
-          dotnet test ${{ env.TEST_PROJECT }} \
-            --configuration Release \
-            --verbosity normal \
-            --logger "trx;LogFileName=test_results.trx" \
-            --results-directory ./test-results
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results
 
       - name: Upload test results
         if: always()
