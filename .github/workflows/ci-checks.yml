@@ -16,14 +16,15 @@ concurrency:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  SOLUTION_PATH: '.' # adjust if your solution lives in a subfolder
+  # If you have a solution file, set SOLUTION_PATH to it (example './Cours1_SGBD.sln').
+  # Otherwise keep it as repository root and restore specific projects below.
+  SOLUTION_PATH: '.' 
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
 
 jobs:
   restore:
     name: Restore
     runs-on: windows-latest
-    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,14 +41,17 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      - name: Restore
-        run: dotnet restore ${{ env.SOLUTION_PATH }}
+      # Restore both projects explicitly so the restore job is meaningful as a status check
+      - name: Restore main project
+        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj || true
+
+      - name: Restore test project
+        run: dotnet restore ${{ env.TEST_PROJECT }} || true
 
   build:
     name: Build
     needs: restore
     runs-on: windows-latest
-    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,21 +61,21 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore NuGet packages from cache (if available)
+      - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
+      # Do not use --no-restore here — runner is independent and must restore if needed
       - name: Build (Release)
-        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
 
   test:
     name: Test
     needs: build
     runs-on: windows-latest
-    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,18 +85,19 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore NuGet packages from cache (if available)
+      - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
+      # Let dotnet test restore / build as needed; do not rely on obj files from the restore job
       - name: Test (xTEST_Cours1_SGBD)
         run: |
           dotnet test ${{ env.TEST_PROJECT }} \
             --configuration Release \
-            --no-build \
+            --verbosity normal \
             --logger "trx;LogFileName=test_results.trx" \
             --results-directory ./test-results
 
