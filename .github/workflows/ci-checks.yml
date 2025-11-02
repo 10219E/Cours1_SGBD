@@ -1,0 +1,129 @@
+name: .NET CI — Restore · Build · Test (net9.0-windows)
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  SOLUTION_PATH: '.'
+  TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
+
+jobs:
+  restore:
+    name: Restore
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Restore main project
+        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
+
+      - name: Restore test project
+        run: dotnet restore ${{ env.TEST_PROJECT }}
+
+  build:
+    name: Build
+    needs: restore
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
+
+  test:
+    name: Test (with coverage)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Run tests and collect coverage
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+
+      - name: Locate coverage file (PowerShell)
+        shell: pwsh
+        run: |
+          $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
+          if ($cov) {
+            New-Item -ItemType Directory -Force -Path coverage | Out-Null
+            Copy-Item $cov.FullName -Destination coverage/coverage.cobertura.xml -Force
+            Write-Host "Found coverage: $($cov.FullName)"
+          } else {
+            Write-Host "No coverage.cobertura.xml found"
+          }
+
+      - name: Install ReportGenerator and produce HTML report
+        shell: pwsh
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
+          $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+          if (Test-Path coverage/coverage.cobertura.xml) {
+            reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
+          } else {
+            Write-Host "Skipping HTML report generation: coverage file missing"
+          }
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/coverage.cobertura.xml
+            coverage-report/**
+
+      - name: Upload test results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./test-results/*.trx
