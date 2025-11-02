@@ -40,10 +40,10 @@ jobs:
           restore-keys: nuget-packages-${{ runner.os }}-
 
       - name: Restore main project
-        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj || true
+        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
 
       - name: Restore test project
-        run: dotnet restore ${{ env.TEST_PROJECT }} || true
+        run: dotnet restore ${{ env.TEST_PROJECT }}
 
   build:
     name: Build
@@ -69,7 +69,7 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
 
   test:
-    name: Test
+    name: Test (with coverage)
     needs: build
     runs-on: windows-latest
     steps:
@@ -88,11 +88,41 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      - name: Test (xTEST_Cours1_SGBD)
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results
+      - name: Run tests and collect coverage
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
 
-      - name: Upload test results
-        if: always()
+      - name: Locate coverage file (PowerShell)
+        shell: pwsh
+        run: |
+          $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
+          if ($cov) {
+            New-Item -ItemType Directory -Force -Path coverage | Out-Null
+            Copy-Item $cov.FullName -Destination coverage/coverage.cobertura.xml -Force
+            Write-Host "Found coverage: $($cov.FullName)"
+          } else {
+            Write-Host "No coverage.cobertura.xml found"
+          }
+
+      - name: Install ReportGenerator and produce HTML report
+        shell: pwsh
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
+          $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+          if (Test-Path coverage/coverage.cobertura.xml) {
+            reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
+          } else {
+            Write-Host "Skipping HTML report generation: coverage file missing"
+          }
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/coverage.cobertura.xml
+            coverage-report/**
+
+      - name: Upload test results artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-results
