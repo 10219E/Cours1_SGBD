@@ -69,7 +69,7 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
 
   test:
-    name: Test
+    name: Test (with coverage & reports)
     needs: build
     runs-on: windows-latest
     steps:
@@ -88,12 +88,50 @@ jobs:
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-${{ runner.os }}-
 
-      - name: Test (xTEST_Cours1_SGBD)
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results
+      - name: Run tests + collect coverage
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+      
+      - name: Find coverage file
+        shell: bash
+        run: |
+          mkdir -p coverage
+          # copy the first coverage.cobertura.xml found to a stable path
+          cov=$(find test-results -type f -name "coverage.cobertura.xml" | head -n 1 || true)
+          if [ -n "$cov" ]; then
+            echo "Found coverage file: $cov"
+            cp "$cov" coverage/coverage.cobertura.xml
+          else
+            echo "No coverage.cobertura.xml found"
+          fi
 
-      - name: Upload test results
-        if: always()
+      - name: Install ReportGenerator (to produce HTML report)
+        shell: bash
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 || true
+          export PATH="$HOME/.dotnet/tools:$PATH"
+          if [ -f coverage/coverage.cobertura.xml ]; then
+            reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html || true
+          else
+            echo "Skipping report generation: coverage file missing"
+          fi
+
+      - name: Upload test results artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: ./test-results/*.trx
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/coverage.cobertura.xml
+            coverage-report/**
+
+      - name: (optional) Upload coverage to Codecov
+        if: secrets.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage.cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
