@@ -1,0 +1,1 @@
+Server=CUTE59\SQL_EPS;Database=SGBD_C;User Id=PRO;Password=;TrustServerCertificate=True

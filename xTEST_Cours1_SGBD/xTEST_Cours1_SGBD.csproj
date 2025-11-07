@@ -28,6 +28,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cours1_SGBD\Cours1_SGBD.csproj" />
+    <ProjectReference Include="..\InterfacesDLL\InterfacesDLL.csproj" />
+    <ProjectReference Include="..\ModelsDLL\ModelsDLL.csproj" />
+    <ProjectReference Include="..\Repository\RepositoryDLL.csproj" />
+    <ProjectReference Include="..\ServicesDLL\ServicesDLL.csproj" />
   </ItemGroup>
 
 </Project>

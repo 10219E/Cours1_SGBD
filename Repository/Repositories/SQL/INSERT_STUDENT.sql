@@ -1,0 +1,1 @@
+INSERT INTO Students ([First Name], [Last Name], [E-mail], [Mobile], [Confirmed], [Section]) VALUES (@FirstName, @LastName, @Email, @Mobile, @Confirmed, @Section)

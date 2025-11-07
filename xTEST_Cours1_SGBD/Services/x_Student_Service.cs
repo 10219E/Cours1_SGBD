@@ -1,7 +1,7 @@
 ﻿using Castle.Core.Logging;
-using Cours1_SGBD.Interfaces;
-using Cours1_SGBD.Models;
-using Cours1_SGBD.Services;
+using InterfacesDLL.Interfaces;
+using ModelsDLL.Models;
+using ServicesDLL.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

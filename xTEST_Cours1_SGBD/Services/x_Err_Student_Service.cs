@@ -1,6 +1,6 @@
-using Cours1_SGBD.Interfaces;
-using Cours1_SGBD.Models;
-using Cours1_SGBD.Services;
+using InterfacesDLL.Interfaces;
+using ModelsDLL.Models;
+using ServicesDLL.Services;
 using Moq;
 using System;
 using System.Collections.Generic;
