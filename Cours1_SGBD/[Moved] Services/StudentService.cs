@@ -1,6 +1,5 @@
-﻿using Cours1_SGBD.Interfaces;
-using Cours1_SGBD.Models;
-using Cours1_SGBD.Repositories;
+﻿using ModelsDLL.Models;
+using InterfacesDLL.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;

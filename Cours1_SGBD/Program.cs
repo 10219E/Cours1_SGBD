@@ -1,8 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using Cours1_SGBD.Interfaces;
-using Cours1_SGBD.Models;
-using Cours1_SGBD.Repositories;
-using Cours1_SGBD.Services;
+
+using ModelsDLL.Models;
+using InterfacesDLL.Interfaces;
+using RepositoryDLL.RepoSvc;
+using ServicesDLL.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
@@ -189,7 +190,7 @@ namespace Cours1_SGBD
             var services = new ServiceCollection();
 
             services.AddLogging(configure => configure.AddConsole())
-                    .AddSingleton<ICoursSGBDRepo, CoursSGBDRepo>()
+                    .AddSingleton<ICoursSGBDRepo, RepoSvc>()
                     .AddSingleton<IStudentService, StudentService>();
 
             return services.BuildServiceProvider();

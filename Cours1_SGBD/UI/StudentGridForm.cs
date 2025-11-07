@@ -1,4 +1,4 @@
-﻿using Cours1_SGBD.Models;
+﻿using ModelsDLL.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

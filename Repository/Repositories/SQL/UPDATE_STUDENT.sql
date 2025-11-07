@@ -1,0 +1,1 @@
+UPDATE Students SET {SET_CLAUSE} WHERE ID = @ID

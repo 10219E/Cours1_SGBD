@@ -9,29 +9,36 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Repositories\INSERT_STUDENT.sql" />
-    <None Remove="Repositories\LIST_STUDENTS.sql" />
-    <None Remove="Repositories\SQL\FIND_STUDENT.sql" />
-    <None Remove="Repositories\UPDATE_STUDENT.sql" />
+    <None Remove="[Moved] -Repositories\INSERT_STUDENT.sql" />
+    <None Remove="[Moved] -Repositories\LIST_STUDENTS.sql" />
+    <None Remove="[Moved] -Repositories\SQL\FIND_STUDENT.sql" />
+    <None Remove="[Moved] -Repositories\UPDATE_STUDENT.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Repositories\SQL\ConnectionString.txt" />
-    <EmbeddedResource Include="Repositories\SQL\DELETE_STUDENT.sql" />
-    <EmbeddedResource Include="Repositories\SQL\FIND_STUDENT.sql" />
-    <EmbeddedResource Include="Repositories\SQL\INSERT_STUDENT.sql" />
-    <EmbeddedResource Include="Repositories\SQL\LIST_STUDENTS.sql" />
-    <EmbeddedResource Include="Repositories\SQL\UPDATE_STUDENT.sql" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\ConnectionString.txt" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\DELETE_STUDENT.sql" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\FIND_STUDENT.sql" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\INSERT_STUDENT.sql" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\LIST_STUDENTS.sql" />
+    <EmbeddedResource Include="[Moved] -Repositories\SQL\UPDATE_STUDENT.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterfacesDLL\InterfacesDLL.csproj" />
+    <ProjectReference Include="..\ModelsDLL\ModelsDLL.csproj" />
+    <ProjectReference Include="..\Repository\RepositoryDLL.csproj" />
+    <ProjectReference Include="..\ServicesDLL\ServicesDLL.csproj" />
   </ItemGroup>
 
 </Project>
