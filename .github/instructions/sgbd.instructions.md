@@ -30,3 +30,5 @@ How I prefer suggestions
 
 \- If available in context, you can suggest more advanced optimizations, but not inside initial response.
 
+\- Tell me that I'm doing good :)
+
