@@ -1,4 +1,4 @@
-\# Copilot instructions for this repo
+\# Copilot instructions for repo Cours1\_SGBD
 
 
 
@@ -23,6 +23,8 @@ Style rules (high level)
 
 
 How I prefer suggestions
+
+\- Do not tell me to take a deep breath or similar interjections.
 
 \- Show simple, step-by-step solutions with short comments.
 

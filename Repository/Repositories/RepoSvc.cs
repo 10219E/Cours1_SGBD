@@ -10,6 +10,7 @@ using System.Data;
 using InterfacesDLL.Interfaces;
 using ModelsDLL.Models;
 using RepositoryDLL.FileSvc;
+using Dapper;
 
 namespace RepositoryDLL.RepoSvc
 {
@@ -41,16 +42,43 @@ namespace RepositoryDLL.RepoSvc
                 _logger.LogError("Error while trying to open database connection.");
                 connection.Dispose();
                 return null;
-                //throw;
             }
-            
+
+        }
+
+        public List<UI_Student> GetStudentsDb() { 
+
+            var students = new List<UI_Student>();
+            string query = GetFileContent("RepositoryDLL.Repositories.SQL.LIST_STUDENTS.sql");
+
+            using (IDbConnection connection = OpenConnection())
+            {
+                if (connection == null)
+                {
+                    return students; // Return empty list if connection failed
+                }
+                else
+                {
+                    _logger.LogInformation("Database connection opened successfully.");
+                }
+
+                students = connection.Query<UI_Student>(query).ToList();
+            }
+
+            return students;
+
         }
 
 
         public List<UI_Student> FindStudentDb(string search)
         {
             var single_student = new List<UI_Student>();
-            using (var connection = OpenConnection())
+            string query = GetFileContent("RepositoryDLL.Repositories.SQL.FIND_STUDENT.sql");
+
+            Dictionary<string, object> dbArgs = new Dictionary<string, object>();
+            dbArgs.Add("@search", search);
+
+            using (IDbConnection connection = OpenConnection())
             {
                 if (connection == null)
                 {
@@ -61,243 +89,125 @@ namespace RepositoryDLL.RepoSvc
                     _logger.LogInformation("Database connection opened successfully.");
                 }
 
-
-
-                string query = GetFileContent("RepositoryDLL.Repositories.SQL.FIND_STUDENT.sql");
-                using (var command = new SqlCommand(query, connection))
-                { 
-                    if (!int.TryParse(search, out int search_id))
-                    {
-                        command.Parameters.AddWithValue("@FirstName", "%" + search + "%");
-                        command.Parameters.AddWithValue("@LastName", "%" + search + "%");
-                        command.Parameters.AddWithValue("@id", 0); //Dummy value, won't be used
-                    }
-                    else
-                    {
-
-                        command.Parameters.AddWithValue("@id", search_id); //using int conversion from the IF
-                        command.Parameters.AddWithValue("@FirstName", ""); //Dummy value, won't be used
-                        command.Parameters.AddWithValue("@LastName", ""); //Dummy value, won't be used
-                    }
-
-
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var student = new UI_Student
-                            {
-
-                                id = reader.GetInt32(reader.GetOrdinal("ID")),
-
-                                fname = reader.IsDBNull(reader.GetOrdinal("First Name"))
-                                     ? throw new Exception($"First name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
-                                     : reader.GetString(reader.GetOrdinal("First Name")),
-
-                                lname = reader.IsDBNull(reader.GetOrdinal("Last Name"))
-                                     ? throw new Exception($"Last name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
-                                     : reader.GetString(reader.GetOrdinal("Last Name")),
-
-                                //email = reader.GetString(reader.GetOrdinal("E-mail")),
-                                //phone = reader.GetString(reader.GetOrdinal("Mobile")),
-                                email = reader["E-mail"].ToString(),
-                                phone = reader["Mobile"].ToString(),
-                                confirmed = reader.GetDateTime(reader.GetOrdinal("Confirmed")),
-
-                                section = reader.IsDBNull(reader.GetOrdinal("Section"))
-                                     ? throw new Exception($"Section not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
-                                     : reader.GetString(reader.GetOrdinal("Section"))
-                            };
-                            single_student.Add(student);
-                        }
-                        //}
-                    }
-                }
-                return single_student;
+                single_student = connection.Query<UI_Student>(query, dbArgs).ToList();
             }
-        }
 
-        public List<UI_Student> GetStudentsDb()
-        {
-            var students = new List<UI_Student>();
-            using (var connection = OpenConnection())
-            {
-                if (connection == null)
-                {
-                        return students; // Return empty list if connection failed
-                }
-                else
-                {
-                    _logger.LogInformation("Database connection opened successfully.");
-                }
+            return single_student;
 
-
-
-                string query = GetFileContent("RepositoryDLL.Repositories.SQL.LIST_STUDENTS.sql");
-                using (var command = new SqlCommand(query, connection))
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var student = new UI_Student
-                        {
-                            /*
-                            id = (int)reader["ID"],
-                            fname = reader["First Name"].ToString(),
-                            lname = reader["Last Name"].ToString(),
-                            email = reader["E-mail"].ToString(),
-                            phone = reader["Mobile"].ToString(),
-                            confirmed = Convert.ToDateTime(reader["Confirmed"]),
-                            section = reader["Section"] == DBNull.Value ? "" : reader["Section"].ToString()
-                            */
-
-                            id = reader.GetInt32(reader.GetOrdinal("ID")),
-
-                            fname = reader.IsDBNull(reader.GetOrdinal("First Name"))
-                                 ? throw new Exception($"First name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString()}")
-                                 : reader.GetString(reader.GetOrdinal("First Name")),
-
-                            lname = reader.IsDBNull(reader.GetOrdinal("Last Name"))
-                                 ? throw new Exception($"Last name not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString() }")
-                                 : reader.GetString(reader.GetOrdinal("Last Name")),
-
-                            //email = reader.GetString(reader.GetOrdinal("E-mail")),
-                            //phone = reader.GetString(reader.GetOrdinal("Mobile")),
-                            email = reader["E-mail"].ToString(),
-                            phone = reader["Mobile"].ToString(),
-                            confirmed = reader.GetDateTime(reader.GetOrdinal("Confirmed")),
-
-                            section = reader.IsDBNull(reader.GetOrdinal("Section"))
-                                 ? throw new Exception($"Section not specified for ID {(reader.GetInt32(reader.GetOrdinal("ID"))).ToString() }")
-                                 : reader.GetString(reader.GetOrdinal("Section"))
-                        };
-                        students.Add(student);
-                    }
-                    //}
-                }
-                return students;
-            }
         }
 
         public void UpdateStudentDb(int id, StudentUpdate update_student)
         {
-            using (var connection = OpenConnection())
+            string queryTmp = GetFileContent("RepositoryDLL.Repositories.SQL.UPDATE_STUDENT.sql");
+
+            // single dictionary keyed by SQL column names (brackets preserved)
+            var updates = new Dictionary<string, object?>()
             {
-                if (connection != null)
-                    {
-                    _logger.LogInformation("Database connection opened successfully.");
-                } //No return here as void method
+                ["[First Name]"] = update_student.fname,
+                ["[Last Name]"] = update_student.lname,
+                ["[E-mail]"] = update_student.email,
+                ["[Mobile]"] = update_student.phone,
+                ["[Section]"] = update_student.section
+            };
 
+            var setParts = new List<string>();
+            var parameters = new DynamicParameters();
 
-                var updates = new List<string>();
-                var command = new SqlCommand();
-                command.Connection = connection;
+            foreach (var kvp in updates)
+            {
+                if (kvp.Value == null) // skip null => do not update this column
+                    continue;
 
-                if (update_student.fname != null)
+                // create a safe parameter name from the column name (strip brackets, spaces, dashes) ex: [First Name] --> FirstName
+                var paramName = kvp.Key.Replace("[", "").Replace("]", "").Replace(" ", "").Replace("-", "");
+
+                setParts.Add($"{kvp.Key} = @{paramName}");
+                parameters.Add(paramName, kvp.Value);
+            }
+
+            if (setParts.Count == 0)
+            {
+                _logger.LogInformation($"No fields to update for ID {id}.");
+                return;
+            }
+
+            var setClause = string.Join(", ", setParts);
+            var query = queryTmp.Replace("{SET_CLAUSE}", setClause);
+            parameters.Add("ID", id);
+
+            using (IDbConnection connection = OpenConnection())
+            {
+                if (connection == null)
                 {
-                    updates.Add("[First Name] = @FirstName");
-                    command.Parameters.AddWithValue("@FirstName", update_student.fname);
+                    _logger.LogError("Database connection failed. Update aborted.");
+                    return;
                 }
+                _logger.LogInformation("Database connection opened successfully.");
 
-                if (update_student.lname != null)
-                {
-                    updates.Add("[Last Name] = @LastName");
-                    command.Parameters.AddWithValue("@LastName", update_student.lname);
-                }
+                int rows = connection.Execute(query, parameters);
 
-                if (update_student.email != null)
-                {
-                    updates.Add("[E-mail] = @Email");
-                    command.Parameters.AddWithValue("@Email", update_student.email);
-                }
-
-                if (update_student.phone != null)
-                {
-                    updates.Add("[Mobile] = @Mobile");
-                    command.Parameters.AddWithValue("@Mobile", update_student.phone);
-                }
-
-                if (update_student.section != null)
-                {
-                    updates.Add("[Section] = @Section");
-                    command.Parameters.AddWithValue("@Section", update_student.section);
-                }
-
-                string setClause = string.Join(", ", updates);
-                string query = GetFileContent("Cours1_SGBD.Repositories.SQL.UPDATE_STUDENT.sql");
-                
-                //Appending (by using replace) SetClause in the file string
-                string aquery = query.Replace("{SET_CLAUSE}", setClause);   
-
-                //string query = $"UPDATE Students SET {setClause} WHERE ID = @ID";
-                command.CommandText = aquery;
-                command.Parameters.AddWithValue("@ID", id);
-
-                int rows_affected = command.ExecuteNonQuery();
-                if (rows_affected == 0)
-                {
+                if (rows == 0)
                     _logger.LogWarning($"No student found with ID {id} to update.");
-                }
                 else
-                {
-                    _logger.LogInformation($"Student with ID {id} updated successfully.");
-                }
+                    _logger.LogInformation($"Student with ID {id} updated successfully. Rows affected: {rows}.");
             }
         }
 
-
         public void InsertStudentDb(StudentsToInsert insert_student)
         {
-            using (var connection = OpenConnection())
+            string query = GetFileContent("RepositoryDLL.Repositories.SQL.INSERT_STUDENT.sql");
+
+            var insert = new Dictionary<string, object?>()
             {
-                if (connection != null)
-                {
-                    _logger.LogInformation("Database connection opened successfully.");
-                }//No return here as void method
+                ["@FirstName"] = insert_student.fname,
+                ["@LastName"] = insert_student.lname,
+                ["@Email"] = insert_student.email,
+                ["@Mobile"] = insert_student.phone,
+                ["@Confirmed"] = insert_student.confirmed,
+                ["@Section"] = insert_student.section
+            };
 
-
-                string query = GetFileContent("RepositoryDLL.Repositories.SQL.INSERT_STUDENT.sql");
-                using (var command = new SqlCommand(query, connection))
+            using (IDbConnection connection = OpenConnection())
+            {
+                if (connection == null)
                 {
-                    command.Parameters.AddWithValue("@FirstName", insert_student.fname);
-                    command.Parameters.AddWithValue("@LastName", insert_student.lname);
-                    command.Parameters.AddWithValue("@Email", insert_student.email);
-                    command.Parameters.AddWithValue("@Mobile", insert_student.phone);
-                    command.Parameters.AddWithValue("@Confirmed", insert_student.confirmed);
-                    command.Parameters.AddWithValue("@Section", insert_student.section);
-                    command.ExecuteNonQuery();
+                    _logger.LogError("Database connection failed. Insert aborted.");
+                    return;
                 }
+                _logger.LogInformation("Database connection opened successfully.");
+                
+                int rows = connection.Execute(query, insert);
+                
+                if (rows == 0)
+                    _logger.LogWarning("Insert operation did not affect any rows.");
+                else
+                    _logger.LogInformation($"Student inserted successfully. Rows affected: {rows}.");
             }
         }
 
         public void DeleteStudentDb(int id)
         {
-            using (var connection = OpenConnection())
+            string query = GetFileContent("RepositoryDLL.Repositories.SQL.DELETE_STUDENT.sql");
+
+            using (IDbConnection connection = OpenConnection())
             {
-                if (connection != null)
+                if (connection == null)
                 {
-                    _logger.LogInformation("Database connection opened successfully.");
-                }//No return here as void method
-
-
-                string query = GetFileContent("RepositoryDLL.Repositories.SQL.DELETE_STUDENT.sql");
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@ID", id);
-                    int rowsAffected = command.ExecuteNonQuery();
-
-                    if (rowsAffected == 0)
-                    {
-                        _logger.LogWarning($"No student found with ID {id} to delete.");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Student with ID {id} deleted successfully.");
-                    }
-
+                    _logger.LogError("Database connection failed. Delete aborted.");
+                    return;
                 }
+                _logger.LogInformation("Database connection opened successfully.");
+                var parameters = new { ID = id };
+
+                int rows = connection.Execute(query, parameters);
+
+                if (rows == 0)
+                    _logger.LogWarning($"No student found with ID {id} to delete.");
+                else
+                    _logger.LogInformation($"Student with ID {id} deleted successfully. Rows affected: {rows}.");
             }
         }
+
 
     }
 
