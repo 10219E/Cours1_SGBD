@@ -132,26 +132,19 @@ jobs:
 
   report:
     name: .NET Tests Results
-    runs-on: windows-latest
     needs: test
+    runs-on: ubuntu-latest   # IMPORTANT: Linux runner needed for container action
     if: always()
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download test-results artifact
+      - name: Download test results artifact
         uses: actions/download-artifact@v4
         with:
           name: test-results
-          path: ./artifacts/test-results
-
-      - name: List downloaded test-results (debug)
-        if: always()
-        run: dir ./artifacts/test-results -Recurse
-
-      - name: Publish .NET test results (TRX) to Checks UI
-        if: always()
+          path: ./test-results
+      - name: Debug list TRX
+        run: ls -R ./test-results
+      - name: Publish test results to Checks UI
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: ./artifacts/test-results/**/*.trx
+          files: ./test-results/**/*.trx
           check_name: .NET Tests Results
