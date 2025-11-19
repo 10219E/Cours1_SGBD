@@ -1,14 +1,14 @@
-name: .NET CI — Restore · Build · Test (net9.0-windows)
+name: Restore · Build · Test · Report (net9.0-windows)
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
 
 permissions:
   contents: read
   checks: write
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +18,6 @@ env:
   DOTNET_VERSION: '9.0.x'
   SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
-
 
 jobs:
   restore:
@@ -93,6 +92,7 @@ jobs:
         run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
 
       - name: Locate coverage file (PowerShell)
+        if: always()
         shell: pwsh
         run: |
           $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
@@ -105,6 +105,7 @@ jobs:
           }
 
       - name: Install ReportGenerator and produce HTML report
+        if: always()
         shell: pwsh
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
@@ -116,6 +117,7 @@ jobs:
           }
 
       - name: Upload coverage artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -123,8 +125,33 @@ jobs:
             coverage/coverage.cobertura.xml
             coverage-report/**
 
-      - name: Upload test results artifact
+      - name: Upload test results artifact (trx)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ./test-results/*.trx
+          path: test-results/**/*.trx
+
+  report:
+    name: .NET Tests Results
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download test-results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: ./test-results
+
+      - name: Debug list TRX files
+        run: ls -R ./test-results
+
+      - name: Publish detailed TRX results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: ./test-results/**/*.trx
+          check_name: .NET Tests Results
+          include_passed: true
+          include_skipped: true
+          report_individual_runs: true
