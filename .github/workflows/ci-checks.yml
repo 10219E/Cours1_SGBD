@@ -1,10 +1,8 @@
 name: .NET CI — Restore · Build · Test (net9.0-windows)
 
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]
 
 permissions:
   contents: read
@@ -151,11 +149,9 @@ jobs:
         if: always()
         run: dir ./artifacts/test-results -Recurse
 
-      - name: Publish test report to Checks UI
+      - name: Publish .NET test results (TRX) to Checks UI
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          name: dotnet-tests
-          path: ./artifacts/test-results/**/*.trx
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: ./artifacts/test-results/**/*.trx
+          check_name: .NET Tests Results
