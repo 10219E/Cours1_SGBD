@@ -156,4 +156,4 @@ jobs:
           name: dotnet-tests
           path: ./artifacts/test-results/**/*.trx
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
