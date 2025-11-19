@@ -151,10 +151,11 @@ jobs:
         run: dir ./artifacts/test-results -Recurse
 
       - name: Publish test report to Checks UI
-        uses: dorny/test-reporter@v1
-        with:
-          name: dotnet-tests
-          path: ./artifacts/test-results/**/*.trx
-	  reporter: trx
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+  	if: always()
+  	uses: dorny/test-reporter@v1
+  	with:
+    	  name: dotnet-tests
+    	  path: ./artifacts/test-results/**/*.trx
+    	  reporter: trx
+  	env:
+    	  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
