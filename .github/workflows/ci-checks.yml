@@ -123,8 +123,19 @@ jobs:
             coverage/coverage.cobertura.xml
             coverage-report/**
 
-      - name: Upload test results artifact
+      - name: Upload test results artifact (trx)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ./test-results/*.trx
+          path: test-results/**/*.trx
+
+      - name: Publish test report to Checks UI
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: dotnet-tests
+          path: test-results/**/*.trx
+          reporter: vstest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
