@@ -155,5 +155,6 @@ jobs:
         with:
           name: dotnet-tests
           path: ./artifacts/test-results/**/*.trx
+	  reporter: trx
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
