@@ -132,21 +132,29 @@ jobs:
           name: test-results
           path: test-results/**/*.trx
 
-  report:
-    name: .NET Tests Results
-    needs: test
-    runs-on: ubuntu-latest   # IMPORTANT: Linux runner needed for container action
-    if: always()
-    steps:
-      - name: Download test results artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results
-          path: ./test-results
-      - name: Debug list TRX
-        run: ls -R ./test-results
-      - name: Publish test results to Checks UI
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: ./test-results/**/*.trx
-          check_name: .NET Tests Results
+report:
+  name: .NET Tests Results
+  needs: test
+  runs-on: ubuntu-latest
+  if: always()
+  steps:
+    - name: Download test-results artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results
+        path: ./test-results
+
+    - name: Debug list TRX
+      run: ls -R ./test-results
+
+    - name: Publish TRX with full details
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: ./test-results/**/*.trx
+        check_name: .NET Tests Results
+        include_passed: true
+        report_individual_runs: true
+        # facultatif: inclure skipped si besoin
+        include_skipped: true
+        # facultatif: ne jamais échouer le check pour des raisons de parsing
+        fail_on: none
