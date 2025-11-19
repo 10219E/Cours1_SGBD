@@ -155,4 +155,3 @@ jobs:
           include_passed: true
           include_skipped: true
           report_individual_runs: true
-          fail_on: none
