@@ -19,7 +19,6 @@ env:
   SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
 
-
 jobs:
   restore:
     name: Restore
@@ -93,6 +92,7 @@ jobs:
         run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
 
       - name: Locate coverage file (PowerShell)
+        if: always()
         shell: pwsh
         run: |
           $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
@@ -105,6 +105,7 @@ jobs:
           }
 
       - name: Install ReportGenerator and produce HTML report
+        if: always()
         shell: pwsh
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
@@ -116,6 +117,7 @@ jobs:
           }
 
       - name: Upload coverage artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -130,12 +132,29 @@ jobs:
           name: test-results
           path: test-results/**/*.trx
 
+  report:
+    name: .NET Tests Results
+    runs-on: windows-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download test-results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: ./artifacts/test-results
+
+      - name: List downloaded test-results (debug)
+        run: dir ./artifacts/test-results -Recurse
+
       - name: Publish test report to Checks UI
-        if: always()
         uses: dorny/test-reporter@v1
         with:
           name: dotnet-tests
-          path: test-results/**/*.trx
+          path: ./artifacts/test-results/**/*.trx
           reporter: vstest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
