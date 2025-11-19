@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -148,6 +148,7 @@ jobs:
           path: ./artifacts/test-results
 
       - name: List downloaded test-results (debug)
+        if: always()
         run: dir ./artifacts/test-results -Recurse
 
       - name: Publish test report to Checks UI
@@ -156,6 +157,5 @@ jobs:
         with:
           name: dotnet-tests
           path: ./artifacts/test-results/**/*.trx
-          reporter: trx
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
