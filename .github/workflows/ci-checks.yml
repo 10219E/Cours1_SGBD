@@ -18,16 +18,6 @@ env:
   DOTNET_VERSION: 9.0.x
   TEST_PROJECT: xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj
 
-permissions:
-  contents: read
-  checks: write
-  pull-requests: write
-  issues: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   restore:
     name: Restore
