@@ -71,7 +71,7 @@ jobs:
   test:
     name: Test (with coverage)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
