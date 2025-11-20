@@ -1,4 +1,5 @@
 /****** Object:  Table [dbo].[Students]    Script Date: 20-11-25 00:18:04 ******/
+USE [xTEST_SGBD_C];
 CREATE TABLE [dbo].[Students](
 	[id] [int] IDENTITY(111,1) NOT NULL,
 	[First Name] [nvarchar](50) NOT NULL,

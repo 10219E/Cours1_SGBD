@@ -10,11 +10,13 @@
   <ItemGroup>
     <None Remove="SQL\CreateDatabase.sql" />
     <None Remove="SQL\CreateTables.sql" />
+    <None Remove="SQL\InitBaseStudents.sql" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="SQL\CreateDatabase.sql" />
     <EmbeddedResource Include="SQL\CreateTables.sql" />
+    <EmbeddedResource Include="SQL\InitBaseStudents.sql" />
   </ItemGroup>
 
   <ItemGroup>

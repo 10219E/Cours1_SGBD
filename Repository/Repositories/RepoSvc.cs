@@ -27,6 +27,12 @@ namespace RepositoryDLL.RepoSvc
             _logger = logger.CreateLogger("SQL_Connection");
         }
 
+        public RepoSvc(ILoggerFactory logger, string connectionString)
+        {
+            _logger = logger.CreateLogger("SQL_Connection");
+            _connectionString = connectionString;
+        }
+
         private SqlConnection OpenConnection() //Opening connection in a separate method to avoid code duplication
         {
             var connection = new SqlConnection(_connectionString);
