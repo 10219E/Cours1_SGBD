@@ -1,4 +1,4 @@
-name: Restore · Build · Test · Report (mixed CI)
+name: Restore · Build · Test · Report
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ env:
 
 jobs:
   restore:
-    name: Restore
+    name: Restore (Windows)
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -43,7 +43,7 @@ jobs:
         run: dotnet restore ${{ env.SOLUTION_PATH }}
 
   build-windows:
-    name: Build App and UI Form
+    name: Build Windows UI
     needs: restore
     runs-on: windows-latest
     steps:
@@ -68,12 +68,6 @@ jobs:
       - name: Build WinForms project (Release)
         run: dotnet build ./Cours1_SGBD/Cours1_SGBD.csproj --configuration Release --no-restore
 
-      - name: Upload WinForms build artifact (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: winforms-build
-          path: Cours1_SGBD/bin/Release
-
   test:
     name: Test (Linux, Testcontainers)
     runs-on: ubuntu-latest
@@ -84,7 +78,7 @@ jobs:
       - name: Patch test project for Linux (remove WinForms refs / TFMs)
         run: |
           python3 - <<'PY'
-          import xml.etree.ElementTree as ET, pathlib
+          import xml.etree.ElementTree as ET
           fp = "xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj"
           tree = ET.parse(fp)
           root = tree.getroot()
@@ -113,9 +107,7 @@ jobs:
 
           if changed:
               tree.write(fp, encoding='utf-8', xml_declaration=True)
-              print("Patched csproj for Linux (removed -windows TFM and WinForms refs).")
-          else:
-              print("No changes required to csproj.")
+              print("Patched csproj for Linux")
           PY
 
       - name: Setup .NET
@@ -130,34 +122,35 @@ jobs:
           key: nuget-packages-ubuntu-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-ubuntu-
 
-      - name: Restore test project and dependencies
+      - name: Restore test project
         run: dotnet restore ${{ env.TEST_PROJECT }}
 
       - name: Run tests and collect coverage
         run: |
-          dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+          dotnet test ${{ env.TEST_PROJECT }} \
+            --configuration Release \
+            --verbosity normal \
+            --logger "trx;LogFileName=test_results.trx" \
+            --results-directory ./test-results \
+            --collect:"XPlat Code Coverage"
 
       - name: Locate coverage file
         if: always()
         run: |
-          mkdir -p coverage || true
-          cov=$(find test-results -type f -name 'coverage.cobertura.xml' | head -n 1 || true)
+          mkdir -p coverage
+          cov=$(find test-results -name 'coverage.cobertura.xml' | head -n 1)
           if [ -n "$cov" ]; then
             cp "$cov" coverage/coverage.cobertura.xml
-            echo "Found coverage: $cov"
-          else
-            echo "No coverage.cobertura.xml found"
+            echo "Coverage found: $cov"
           fi
 
-      - name: Install ReportGenerator and produce HTML report
+      - name: Install ReportGenerator
         if: always()
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
           export PATH="$PATH:$HOME/.dotnet/tools"
           if [ -f coverage/coverage.cobertura.xml ]; then
             reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
-          else
-            echo "Skipping HTML report generation: coverage file missing"
           fi
 
       - name: Upload coverage artifacts
@@ -166,10 +159,10 @@ jobs:
         with:
           name: coverage
           path: |
-            coverage/coverage.cobertura.xml
-            coverage-report/**
+            coverage/
+            coverage-report/
 
-      - name: Upload test results artifact
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -177,22 +170,27 @@ jobs:
           path: test-results/**/*.trx
 
   report:
-    name: .NET Tests Results
+    name: Publish Test Results
     needs: test
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
-      - name: Download test-results artifact
+      - name: Download test results
         uses: actions/download-artifact@v4
         with:
           name: test-results
           path: ./test-results
 
-      - name: Publish detailed TRX results
+      - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
         with:
           files: ./test-results/**/*.trx
           check_name: .NET Tests Results
-          include_passed: true
-          include_skipped: true
+          comment_title: .NET Test Results
           report_individual_runs: true
+          deduplicate_classes_by_file_name: false
