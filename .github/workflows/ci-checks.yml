@@ -20,8 +20,31 @@ env:
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
 
 jobs:
+  restore:
+    name: Restore (shared cache)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Restore all projects
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
   build-windows:
-    name: Build Windows UI
+    name: Build App and UI Form
+    needs: restore
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -31,6 +54,13 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
 
       - name: Restore WinForms project
         run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
@@ -46,7 +76,7 @@ jobs:
 
   test:
     name: Test (Linux, Testcontainers)
-    needs: build-windows
+    needs: restore
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
