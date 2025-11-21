@@ -18,11 +18,12 @@ env:
   DOTNET_VERSION: '9.0.x'
   SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
+  EnableWindowsTargeting: 'true'         # <- Added this line
 
 jobs:
   restore:
     name: Restore
-    runs-on: windows-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,7 +49,7 @@ jobs:
   build:
     name: Build
     needs: restore
-    runs-on: windows-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -71,7 +72,7 @@ jobs:
   test:
     name: Test (with coverage)
     needs: build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -89,7 +90,7 @@ jobs:
           restore-keys: nuget-packages-${{ runner.os }}-
 
       - name: Run tests and collect coverage
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Cov[...]
 
       - name: Locate coverage file (PowerShell)
         if: always()
