@@ -1,4 +1,4 @@
-name: Restore · Build · Test · Report (net9.0-windows)
+name: Restore · Build · Test · Report (mixed CI)
 
 on:
   pull_request:
@@ -18,12 +18,11 @@ env:
   DOTNET_VERSION: '9.0.x'
   SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
-  EnableWindowsTargeting: 'true'         # <- Added this line
 
 jobs:
-  restore:
-    name: Restore
-    runs-on: ubuntu-latest                # <- changed from windows-latest
+  build-windows:
+    name: Build Windows UI
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,42 +36,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-${{ runner.os }}-
+          key: nuget-packages-windows-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-windows-
 
-      - name: Restore main project
+      - name: Restore WinForms project
         run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
 
-      - name: Restore test project
-        run: dotnet restore ${{ env.TEST_PROJECT }}
+      - name: Build WinForms project (Release)
+        run: dotnet build ./Cours1_SGBD/Cours1_SGBD.csproj --configuration Release --no-restore
 
-  build:
-    name: Build
-    needs: restore
-    runs-on: ubuntu-latest                # <- changed from windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Upload WinForms build artifact (optional)
+        uses: actions/upload-artifact@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-${{ runner.os }}-
-
-      - name: Build (Release)
-        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
+          name: winforms-build
+          path: Cours1_SGBD/bin/Release
 
   test:
-    name: Test (with coverage)
-    needs: build
-    runs-on: ubuntu-latest                # <- changed from windows-latest
+    name: Test (Linux, Testcontainers)
+    needs: build-windows
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,35 +68,71 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-${{ runner.os }}-
+          key: nuget-packages-ubuntu-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-ubuntu-
+
+      - name: Remove WinForms ProjectReference from test project (so tests build on Linux)
+        # This edits the test csproj to remove any ProjectReference that points to the WinForms project.
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          fp = "xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj"
+          tree = ET.parse(fp)
+          root = tree.getroot()
+          changed = False
+          # handle default namespace if present
+          ns = {'msbuild': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
+          # find all ProjectReference elements regardless of namespace
+          for pr in root.findall('.//{*}ProjectReference'):
+              include = pr.get('Include') or ""
+              if include.endswith('Cours1_SGBD.csproj') or 'Cours1_SGBD/Cours1_SGBD.csproj' in include.replace('\\','/'):
+                  parent = pr.getparent() if hasattr(pr, 'getparent') else None
+                  # xml.etree doesn't provide getparent; remove via parent traversal
+                  # fallback: iterate over ItemGroup parents and remove matching children
+          # safer removal via ItemGroup iteration
+          for ig in root.findall('.//{*}ItemGroup'):
+              for pr in ig.findall('{*}ProjectReference'):
+                  include = pr.get('Include') or ""
+                  if include.endswith('Cours1_SGBD.csproj') or 'Cours1_SGBD/Cours1_SGBD.csproj' in include.replace('\\','/'):
+                      ig.remove(pr)
+                      changed = True
+          if changed:
+              tree.write(fp, encoding="utf-8", xml_declaration=True)
+              print("Removed ProjectReference to Cours1_SGBD.csproj")
+          else:
+              print("No Cours1_SGBD ProjectReference found in test csproj")
+          PY
+
+      - name: Restore test project and dependencies
+        run: dotnet restore ${{ env.TEST_PROJECT }}
 
       - name: Run tests and collect coverage
-        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Cov[...]
-
-      - name: Locate coverage file (PowerShell)
-        if: always()
-        shell: pwsh
         run: |
-          $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
-          if ($cov) {
-            New-Item -ItemType Directory -Force -Path coverage | Out-Null
-            Copy-Item $cov.FullName -Destination coverage/coverage.cobertura.xml -Force
-            Write-Host "Found coverage: $($cov.FullName)"
-          } else {
-            Write-Host "No coverage.cobertura.xml found"
-          }
+          dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+
+      - name: Locate coverage file (bash)
+        if: always()
+        run: |
+          mkdir -p coverage || true
+          cov=$(find test-results -type f -name 'coverage.cobertura.xml' | head -n 1 || true)
+          if [ -n "$cov" ]; then
+            cp "$cov" coverage/coverage.cobertura.xml
+            echo "Found coverage: $cov"
+          else
+            echo "No coverage.cobertura.xml found"
+          fi
+
       - name: Install ReportGenerator and produce HTML report
         if: always()
-        shell: pwsh
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
-          $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
-          if (Test-Path coverage/coverage.cobertura.xml) {
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          if [ -f coverage/coverage.cobertura.xml ]; then
             reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
-          } else {
-            Write-Host "Skipping HTML report generation: coverage file missing"
-          }
+          else
+            echo "Skipping HTML report generation: coverage file missing"
+          fi
+
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -123,6 +141,7 @@ jobs:
           path: |
             coverage/coverage.cobertura.xml
             coverage-report/**
+
       - name: Upload test results artifact (trx)
         if: always()
         uses: actions/upload-artifact@v4
@@ -143,7 +162,7 @@ jobs:
           path: ./test-results
 
       - name: Debug list TRX files
-        run: ls -R ./test-results
+        run: ls -R ./test-results || true
 
       - name: Publish detailed TRX results
         uses: EnricoMi/publish-unit-test-result-action@v2
