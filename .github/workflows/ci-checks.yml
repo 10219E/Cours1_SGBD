@@ -32,16 +32,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-packages-windows-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-windows-
-
-      - name: Restore WinForms project
-        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
-
       - name: Build WinForms project (Release)
         run: dotnet build ./Cours1_SGBD/Cours1_SGBD.csproj --configuration Release --no-restore
 
@@ -59,6 +49,67 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Ensure python is available (for csproj patching)
+        run: python3 --version
+
+      - name: Patch test project for Linux (remove WinForms refs / TFMs)
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET, pathlib
+          fp = "xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj"
+          tree = ET.parse(fp)
+          root = tree.getroot()
+          ns = ''
+          if root.tag.startswith('{'):
+              ns = root.tag.split('}')[0].strip('{')
+          def q(name):
+              return f'{{{ns}}}{name}' if ns else name
+
+          changed = False
+
+          # 1) change TargetFramework net9.0-windows -> net9.0
+          for tf in root.findall(f'.//{q("TargetFramework")}'):
+              if tf.text and tf.text.endswith('-windows'):
+                  tf.text = tf.text.replace('-windows','')
+                  changed = True
+
+          # 2) remove ProjectReference to the WinForms app (Cours1_SGBD.csproj)
+          for ig in root.findall(f'.//{q("ItemGroup")}'):
+              prs = ig.findall(f'{q("ProjectReference")}')
+              for pr in list(prs):
+                  include = pr.get('Include') or ''
+                  if 'Cours1_SGBD.csproj' in include.replace('\\','/'):
+                      ig.remove(pr)
+                      changed = True
+
+          # 3) find source files that reference System.Windows.Forms and remove Compile entries for them
+          winforms_files = set()
+          for p in pathlib.Path('.').rglob('*.cs'):
+              try:
+                  text = p.read_text(encoding='utf-8', errors='ignore')
+              except Exception:
+                  continue
+              if 'System.Windows.Forms' in text:
+                  winforms_files.add(str(p).replace('\\','/'))
+          if winforms_files:
+              for ig in root.findall(f'.//{q("ItemGroup")}'):
+                  comps = ig.findall(f'{q("Compile")}')
+                  for c in list(comps):
+                      inc = (c.get('Include') or '').replace('\\','/')
+                      if not inc:
+                          continue
+                      # match either exact path or filename
+                      if inc in winforms_files or any(path.endswith('/' + inc) or path.endswith('\\' + inc) for path in winforms_files):
+                          ig.remove(c)
+                          changed = True
+
+          if changed:
+              tree.write(fp, encoding='utf-8', xml_declaration=True)
+              print("Patched csproj for Linux (removed -windows TFM and WinForms refs).")
+          else:
+              print("No changes required to csproj.")
+          PY
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -70,38 +121,6 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-packages-ubuntu-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-packages-ubuntu-
-
-      - name: Remove WinForms ProjectReference from test project (so tests build on Linux)
-        # This edits the test csproj to remove any ProjectReference that points to the WinForms project.
-        run: |
-          python3 - <<'PY'
-          import xml.etree.ElementTree as ET
-          fp = "xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj"
-          tree = ET.parse(fp)
-          root = tree.getroot()
-          changed = False
-          # handle default namespace if present
-          ns = {'msbuild': root.tag.split('}')[0].strip('{')} if '}' in root.tag else {}
-          # find all ProjectReference elements regardless of namespace
-          for pr in root.findall('.//{*}ProjectReference'):
-              include = pr.get('Include') or ""
-              if include.endswith('Cours1_SGBD.csproj') or 'Cours1_SGBD/Cours1_SGBD.csproj' in include.replace('\\','/'):
-                  parent = pr.getparent() if hasattr(pr, 'getparent') else None
-                  # xml.etree doesn't provide getparent; remove via parent traversal
-                  # fallback: iterate over ItemGroup parents and remove matching children
-          # safer removal via ItemGroup iteration
-          for ig in root.findall('.//{*}ItemGroup'):
-              for pr in ig.findall('{*}ProjectReference'):
-                  include = pr.get('Include') or ""
-                  if include.endswith('Cours1_SGBD.csproj') or 'Cours1_SGBD/Cours1_SGBD.csproj' in include.replace('\\','/'):
-                      ig.remove(pr)
-                      changed = True
-          if changed:
-              tree.write(fp, encoding="utf-8", xml_declaration=True)
-              print("Removed ProjectReference to Cours1_SGBD.csproj")
-          else:
-              print("No Cours1_SGBD ProjectReference found in test csproj")
-          PY
 
       - name: Restore test project and dependencies
         run: dotnet restore ${{ env.TEST_PROJECT }}
