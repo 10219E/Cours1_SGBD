@@ -87,14 +87,13 @@ jobs:
               ns = root.tag.split('}')[0].strip('{')
           def q(name):
               return f'{{{ns}}}{name}' if ns else name
-
           changed = False
-
+          # 1) change TargetFramework net9.0-windows -> net9.0
           for tf in root.findall(f'.//{q("TargetFramework")}'):
               if tf.text and tf.text.endswith('-windows'):
                   tf.text = tf.text.replace('-windows','')
                   changed = True
-
+          # 2) remove ProjectReference to the WinForms app (Cours1_SGBD.csproj)
           for ig in root.findall(f'.//{q("ItemGroup")}'):
               prs = ig.findall(f'{q("ProjectReference")}')
               for pr in list(prs):
@@ -102,12 +101,10 @@ jobs:
                   if 'Cours1_SGBD.csproj' in include.replace('\\','/'):
                       ig.remove(pr)
                       changed = True
-
           if changed:
               tree.write(fp, encoding='utf-8', xml_declaration=True)
               print("Patched csproj for Linux")
           PY
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -131,7 +128,6 @@ jobs:
             --logger "trx;LogFileName=test_results.trx" \
             --results-directory ./test-results \
             --collect:"XPlat Code Coverage"
-
       - name: Locate coverage file
         if: always()
         run: |
@@ -141,7 +137,6 @@ jobs:
             cp "$cov" coverage/coverage.cobertura.xml
             echo "Coverage found: $cov"
           fi
-
       - name: Install ReportGenerator
         if: always()
         run: |
@@ -150,7 +145,6 @@ jobs:
           if [ -f coverage/coverage.cobertura.xml ]; then
             reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
           fi
-
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,7 +153,6 @@ jobs:
           path: |
             coverage/
             coverage-report/
-
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -189,3 +182,6 @@ jobs:
         with:
           files: ./test-results/**/*.trx
           check_name: .NET Tests Results
+          comment_title: .NET Test Results
+          report_individual_runs: true
+          deduplicate_classes_by_file_name: false
