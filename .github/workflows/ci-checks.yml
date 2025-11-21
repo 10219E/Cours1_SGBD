@@ -1,102 +1,154 @@
-name: CI Tests (.NET 9)
+name: Restore · Build · Test · Report (net9.0-windows)
 
 on:
   pull_request:
-    branches: [ '**' ]
+    branches: [ "**" ]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  DOTNET_VERSION: 9.0.x
-  TEST_PROJECT: xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj
+  DOTNET_VERSION: '9.0.x'
+  SOLUTION_PATH: '.'
+  TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
 
 jobs:
-  restore-build:
+  restore:
+    name: Restore
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-      - uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj','**/packages.lock.json') }}
-          restore-keys: nuget-${{ runner.os }}-
-      - run: dotnet restore
-      - run: dotnet build --configuration Release --no-restore
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  test:
-    needs: restore-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - name: Enable Docker (already on ubuntu, shown for clarity)
-        run: docker info
-      - name: Cache NuGet
+
+      - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj','**/packages.lock.json') }}
-          restore-keys: nuget-${{ runner.os }}-
-      - name: Run tests (trx + coverage)
-        run: |
-          dotnet test ${{ env.TEST_PROJECT }} \
-            --configuration Release \
-            --collect "XPlat Code Coverage" \
-            --results-directory test-results \
-            --logger "trx;verbosity=normal"
-      - name: Gather coverage
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Restore main project
+        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
+
+      - name: Restore test project
+        run: dotnet restore ${{ env.TEST_PROJECT }}
+
+  build:
+    name: Build
+    needs: restore
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Build (Release)
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
+
+  test:
+    name: Test (with coverage)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-${{ runner.os }}-
+
+      - name: Run tests and collect coverage
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
+
+      - name: Locate coverage file (PowerShell)
         if: always()
+        shell: pwsh
         run: |
-          mkdir -p coverage
-          f=$(find test-results -name coverage.cobertura.xml | head -n1 || true)
-          [ -n "$f" ] && cp "$f" coverage/coverage.cobertura.xml
-      - name: ReportGenerator
+          $cov = Get-ChildItem -Path test-results -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
+          if ($cov) {
+            New-Item -ItemType Directory -Force -Path coverage | Out-Null
+            Copy-Item $cov.FullName -Destination coverage/coverage.cobertura.xml -Force
+            Write-Host "Found coverage: $($cov.FullName)"
+          } else {
+            Write-Host "No coverage.cobertura.xml found"
+          }
+      - name: Install ReportGenerator and produce HTML report
         if: always()
+        shell: pwsh
         run: |
-          dotnet tool install -g dotnet-reportgenerator-globaltool || true
-          export PATH=$PATH:~/.dotnet/tools
-          if [ -f coverage/coverage.cobertura.xml ]; then
+          dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.17 --verbosity quiet || true
+          $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+          if (Test-Path coverage/coverage.cobertura.xml) {
             reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
-          fi
-      - name: Normalize TRX
+          } else {
+            Write-Host "Skipping HTML report generation: coverage file missing"
+          }
+      - name: Upload coverage artifacts
         if: always()
-        run: |
-          mkdir -p artifacts/trx
-          i=0
-          find test-results -type f -name '*.trx' | while read f; do
-            cp "$f" "artifacts/trx/${{ github.run_id }}-ubuntu-${i}-$(basename "$f")"
-            i=$((i+1))
-          done
-      - uses: actions/upload-artifact@v4
-        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: |
             coverage/coverage.cobertura.xml
             coverage-report/**
-      - uses: actions/upload-artifact@v4
+      - name: Upload test results artifact (trx)
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: artifacts/trx/*.trx
+          path: test-results/**/*.trx
 
-  publish:
+  report:
+    name: .NET Tests Results
     needs: test
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download test-results artifact
+        uses: actions/download-artifact@v4
         with:
           name: test-results
-          path: test-results
-      - run: ls -R test-results
-      - uses: EnricoMi/publish-unit-test-result-action@v2
+          path: ./test-results
+
+      - name: Debug list TRX files
+        run: ls -R ./test-results
+
+      - name: Publish detailed TRX results
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: test-results/*.trx
-          check_name: .NET Tests (ubuntu)
+          files: ./test-results/**/*.trx
+          check_name: .NET Tests Results
           include_passed: true
           include_skipped: true
           report_individual_runs: true
