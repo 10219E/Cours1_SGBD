@@ -32,6 +32,9 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Restore WinForms project
+        run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
+
       - name: Build WinForms project (Release)
         run: dotnet build ./Cours1_SGBD/Cours1_SGBD.csproj --configuration Release --no-restore
 
