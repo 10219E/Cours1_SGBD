@@ -21,8 +21,8 @@ env:
 
 jobs:
   restore:
-    name: Restore (shared cache)
-    runs-on: ubuntu-latest
+    name: Restore
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,8 +36,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-${{ runner.os }}-
+          key: nuget-packages-windows-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-windows-
 
       - name: Restore all projects
         run: dotnet restore ${{ env.SOLUTION_PATH }}
@@ -59,8 +59,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-packages-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: nuget-packages-${{ runner.os }}-
+          key: nuget-packages-windows-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: nuget-packages-windows-
 
       - name: Restore WinForms project
         run: dotnet restore ./Cours1_SGBD/Cours1_SGBD.csproj
@@ -76,14 +76,10 @@ jobs:
 
   test:
     name: Test (Linux, Testcontainers)
-    needs: restore
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Ensure python is available (for csproj patching)
-        run: python3 --version
 
       - name: Patch test project for Linux (remove WinForms refs / TFMs)
         run: |
@@ -115,27 +111,6 @@ jobs:
                       ig.remove(pr)
                       changed = True
 
-          # 3) find source files that reference System.Windows.Forms and remove Compile entries for them
-          winforms_files = set()
-          for p in pathlib.Path('.').rglob('*.cs'):
-              try:
-                  text = p.read_text(encoding='utf-8', errors='ignore')
-              except Exception:
-                  continue
-              if 'System.Windows.Forms' in text:
-                  winforms_files.add(str(p).replace('\\','/'))
-          if winforms_files:
-              for ig in root.findall(f'.//{q("ItemGroup")}'):
-                  comps = ig.findall(f'{q("Compile")}')
-                  for c in list(comps):
-                      inc = (c.get('Include') or '').replace('\\','/')
-                      if not inc:
-                          continue
-                      # match either exact path or filename
-                      if inc in winforms_files or any(path.endswith('/' + inc) or path.endswith('\\' + inc) for path in winforms_files):
-                          ig.remove(c)
-                          changed = True
-
           if changed:
               tree.write(fp, encoding='utf-8', xml_declaration=True)
               print("Patched csproj for Linux (removed -windows TFM and WinForms refs).")
@@ -162,7 +137,7 @@ jobs:
         run: |
           dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Coverage"
 
-      - name: Locate coverage file (bash)
+      - name: Locate coverage file
         if: always()
         run: |
           mkdir -p coverage || true
@@ -194,7 +169,7 @@ jobs:
             coverage/coverage.cobertura.xml
             coverage-report/**
 
-      - name: Upload test results artifact (trx)
+      - name: Upload test results artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -212,9 +187,6 @@ jobs:
         with:
           name: test-results
           path: ./test-results
-
-      - name: Debug list TRX files
-        run: ls -R ./test-results || true
 
       - name: Publish detailed TRX results
         uses: EnricoMi/publish-unit-test-result-action@v2
