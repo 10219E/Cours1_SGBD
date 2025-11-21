@@ -1,83 +1,44 @@
 ﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using ModelsDLL.Models;
 using RepositoryDLL.RepoSvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Testcontainers.MsSql;
+using Xunit;
 using xTEST_Cours1_SGBD.Shared;
+using Microsoft.Extensions.Logging;
 
 namespace xTEST_Cours1_SGBD.Repositories
 {
-    public class c_RepoSvc //: IAsyncLifetime
+    [Collection("DbCollection")]
+    public class c_RepoSvc
     {
-        private MsSqlContainer _container;
+        private readonly DatabaseFixture _fixture;
 
-        public Task DisposeAsync()
+        public c_RepoSvc(DatabaseFixture fixture)
         {
-            return _container.DisposeAsync().AsTask();
+            _fixture = fixture;
         }
 
-        public Task InitializeAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        // AAA pattern is used below: Arrange / Act / Assert
         [Fact]
         public async Task x_TestGetStudentsDb()
         {
-            // Arrange: start a disposable SQL Server container and prepare the database
-            _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("yourStrong(!)Password")
-                //.WithAcceptLicenseAgreement(true)
-                .Build();
-            await _container.StartAsync();
+            await _fixture.SeedDataBase(); // seed with initial data
 
-            // DB setup helper uses the container connection string to create DB/tables
-            DBSetup dbSetup = new DBSetup(_container.GetConnectionString());
+            // quick connection check (optional) — still part of Arrange
+            await using var connection = new SqlConnection(_fixture.ConnectionString);
+            await connection.OpenAsync();
 
-            await dbSetup.InitializeDataBase(); // create the test database
-            await dbSetup.CreateTablesDataBase(); // create tables
-            await dbSetup.SeedDataBase(); // seed with initial data
+            // Act: create the repo using the test connection string so it targets the Docker DB only
+            var logger = LoggerFactory.Create(builder => { /* optional config */ });
+            var repo = new RepoSvc(logger, _fixture.ConnectionString);
 
-            try
-            {
-                // Build a connection string that points to the test database instead of master
-                var connectionString = (_container.GetConnectionString()).Replace("master", "xTEST_SGBD_C");
+            // Call the method under test (Act)
+            var students = repo.GetStudentsDb();
 
-                // quick connection check (optional) — still part of Arrange
-                await using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
+            // Assert: validate expected result(s)
+            Assert.NotNull(students);   
+            Assert.NotEmpty(students);
+            Assert.Equal(5, students.Count());  
 
-                // Act: create the repo using the test connection string so it targets the Docker DB only
-                var logger = LoggerFactory.Create(builder => { /* optional config */ });
-                var repo = new RepoSvc(logger, connectionString);
-
-                // Call the method under test (Act)
-                var students = repo.GetStudentsDb();
-
-                // Assert: validate expected result(s)
-                Assert.NotNull(students);   
-                Assert.NotEmpty(students);
-                Assert.Equal(5, students.Count());  
-
-                // Cleanup: close connection and dispose container
-                await connection.CloseAsync();
-                await _container.DisposeAsync();
-            }
-            catch (Exception ex)
-            {
-                // Ensure container is disposed on failure and rethrow so the test fails
-                await _container.DisposeAsync();
-                Console.WriteLine($"Error connecting to the database: {ex.Message}");
-                throw;
-            }
         }
 
 
@@ -87,41 +48,19 @@ namespace xTEST_Cours1_SGBD.Repositories
         [InlineData("NonExistingName", 0)]
         public async Task x_TestFindStudentDb(string search, int expect_count)
         {
-            _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("yourStrong(!)Password")
-                .Build();
-            await _container.StartAsync();
+            await _fixture.SeedDataBase(); // seed with initial data
 
-            DBSetup dbSetup = new DBSetup(_container.GetConnectionString());
+            // quick connection check (optional) — still part of Arrange
+            await using var connection = new SqlConnection(_fixture.ConnectionString);
+            await connection.OpenAsync();
 
-            await dbSetup.InitializeDataBase(); // create the test database
-            await dbSetup.CreateTablesDataBase(); // create tables
-            await dbSetup.SeedDataBase(); // seed with initial data
+            var logger = LoggerFactory.Create(builder => { /* optional config */ });
+            var repo = new RepoSvc(logger, _fixture.ConnectionString);
 
-            try
-            {
-                var connectionString = (_container.GetConnectionString()).Replace("master", "xTEST_SGBD_C");
+            var students = repo.FindStudentDb(search); //need to pass search parameter
 
-                await using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
-
-                var logger = LoggerFactory.Create(builder => { /* optional config */ });
-                var repo = new RepoSvc(logger, connectionString);
-
-                var students = repo.FindStudentDb(search); //need to pass search parameter
-
-                Assert.Equal(expect_count, students.Count());
-
-                await connection.CloseAsync();
-                await _container.DisposeAsync();
-            }
-            catch (Exception ex)
-            {
-                await _container.DisposeAsync();
-                Console.WriteLine($"Error connecting to the database: {ex.Message}");
-                throw;
-            }
+            Assert.Equal(expect_count, students.Count());
+            
         }
 
         [Fact]
@@ -134,49 +73,26 @@ namespace xTEST_Cours1_SGBD.Repositories
                 lname = "Mark"
             };
 
+            await _fixture.SeedDataBase(); // seed with initial data
 
-            _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("yourStrong(!)Password")
-                .Build();
-            await _container.StartAsync();
+            // quick connection check (optional) — still part of Arrange
+            await using var connection = new SqlConnection(_fixture.ConnectionString);
+            await connection.OpenAsync();
 
-            DBSetup dbSetup = new DBSetup(_container.GetConnectionString());
+            var logger = LoggerFactory.Create(builder => { /* optional config */ });
+            var repo = new RepoSvc(logger, _fixture.ConnectionString);
 
-            await dbSetup.InitializeDataBase(); // create the test database
-            await dbSetup.CreateTablesDataBase(); // create tables
-            await dbSetup.SeedDataBase(); // seed with initial data
+            // Act: perform update on real repo
+            repo.UpdateStudentDb(id_toupdate, updatedStudent);
 
-            try
-            {
-                var connectionString = (_container.GetConnectionString()).Replace("master", "xTEST_SGBD_C");
+            // Act: read back the updated student (FindStudentDb accepts string search)
+            var updated = repo.FindStudentDb(id_toupdate.ToString());
 
-                await using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
+            // Assert: stable checks by id, not by index
+            Assert.Single(updated);
+            Assert.Equal(id_toupdate, updated[0].id);
+            Assert.Equal("Mark", updated[0].lname);
 
-                var logger = LoggerFactory.Create(builder => { /* optional config */ });
-                var repo = new RepoSvc(logger, connectionString);
-
-                // Act: perform update on real repo
-                repo.UpdateStudentDb(id_toupdate, updatedStudent);
-
-                // Act: read back the updated student (FindStudentDb accepts string search)
-                var updated = repo.FindStudentDb(id_toupdate.ToString());
-
-                // Assert: stable checks by id, not by index
-                Assert.Single(updated);
-                Assert.Equal(id_toupdate, updated[0].id);
-                Assert.Equal("Mark", updated[0].lname);
-
-                await connection.CloseAsync();
-                await _container.DisposeAsync();
-            }
-            catch (Exception ex)
-            {
-                await _container.DisposeAsync();
-                Console.WriteLine($"Error connecting to the database: {ex.Message}");
-                throw;
-            }
         }
 
         [Theory]
@@ -194,47 +110,27 @@ namespace xTEST_Cours1_SGBD.Repositories
                 confirmed = DateTime.Now
             };
 
+            await _fixture.SeedDataBase(); // seed with initial data
 
-            _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("yourStrong(!)Password")
-                .Build();
-            await _container.StartAsync();
+            // quick connection check (optional) — still part of Arrange
+            await using var connection = new SqlConnection(_fixture.ConnectionString);
+            await connection.OpenAsync();
 
-            DBSetup dbSetup = new DBSetup(_container.GetConnectionString());
+            var logger = LoggerFactory.Create(builder => { /* optional config */ });
+            var repo = new RepoSvc(logger, _fixture.ConnectionString);
 
-            await dbSetup.InitializeDataBase(); // create the test database
-            await dbSetup.CreateTablesDataBase(); // create tables
-            await dbSetup.SeedDataBase(); // seed with initial data
+            repo.InsertStudentDb(insert); //need to pass object to insert
 
-            try
-            {
-                var connectionString = (_container.GetConnectionString()).Replace("master", "xTEST_SGBD_C");
+            // Act: read back the updated student (FindStudentDb accepts string search)
+            var verif = repo.FindStudentDb(insert.fname);
 
-                await using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
+            // Assert: stable checks by id, not by index
+            Assert.Single(verif);
+            Assert.Equal(insert.fname, verif[0].fname);
+            Assert.Equal(insert.email, verif[0].email);
+            Assert.Equal(insert.lname, verif[0].lname);
+            Assert.Equal(insert.phone, verif[0].phone);
 
-                var logger = LoggerFactory.Create(builder => { /* optional config */ });
-                var repo = new RepoSvc(logger, connectionString);
-
-                repo.InsertStudentDb(insert); //need to pass object to insert
-
-                // Act: read back the updated student (FindStudentDb accepts string search)
-                var verif = repo.FindStudentDb(insert.fname);
-
-                // Assert: stable checks by id, not by index
-                Assert.Single(verif);
-                Assert.Equal(insert.fname, verif[0].fname);
-                Assert.Equal(insert.email, verif[0].email);
-                Assert.Equal(insert.lname, verif[0].lname);
-                Assert.Equal(insert.phone, verif[0].phone);
-            }
-            catch (Exception ex)
-            {
-                await _container.DisposeAsync();
-                Console.WriteLine($"Error connecting to the database: {ex.Message}");
-                throw;
-            }
         }
 
         [Theory]
@@ -243,46 +139,27 @@ namespace xTEST_Cours1_SGBD.Repositories
         public async Task x_DeleteStudentDb(int id)
         {
 
-            _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("yourStrong(!)Password")
-                .Build();
-            await _container.StartAsync();
+            await _fixture.SeedDataBase(); // seed with initial data
 
-            DBSetup dbSetup = new DBSetup(_container.GetConnectionString());
+            // quick connection check (optional) — still part of Arrange
+            await using var connection = new SqlConnection(_fixture.ConnectionString);
+            await connection.OpenAsync();
 
-            await dbSetup.InitializeDataBase(); // create the test database
-            await dbSetup.CreateTablesDataBase(); // create tables
-            await dbSetup.SeedDataBase(); // seed with initial data
+            var logger = LoggerFactory.Create(builder => { /* optional config */ });
+            var repo = new RepoSvc(logger, _fixture.ConnectionString);
 
-            try
-            {
-                var connectionString = (_container.GetConnectionString()).Replace("master", "xTEST_SGBD_C");
+            repo.DeleteStudentDb(id); //need to pass id to delete
 
-                await using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
+            var idstr = id.ToString(); //converting to string for search
 
-                var logger = LoggerFactory.Create(builder => { /* optional config */ });
-                var repo = new RepoSvc(logger, connectionString);
+            // Act: read back the updated student (FindStudentDb accepts string search)
+            var verif = repo.FindStudentDb(idstr);
 
-                repo.DeleteStudentDb(id); //need to pass id to delete
+            // Assert: stable checks by id, not by index
+            Assert.Empty(verif);
+            Assert.Equal(0, verif.Count());
 
-                var idstr = id.ToString(); //converting to string for search
 
-                // Act: read back the updated student (FindStudentDb accepts string search)
-                var verif = repo.FindStudentDb(idstr);
-
-                // Assert: stable checks by id, not by index
-                Assert.Empty(verif);
-                Assert.Equal(0, verif.Count());
-
-            }
-            catch (Exception ex)
-            {
-                await _container.DisposeAsync();
-                Console.WriteLine($"Error connecting to the database: {ex.Message}");
-                throw;
-            }
         }
     }
 }
