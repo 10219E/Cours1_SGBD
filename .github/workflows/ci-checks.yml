@@ -1,4 +1,4 @@
-name: Restore · Build · Test · Report (net9.0-mixed-linux-windows)
+name: Restore · Build · Test · Report (net9.0-windows)
 
 on:
   pull_request:
@@ -18,12 +18,12 @@ env:
   DOTNET_VERSION: '9.0.x'
   SOLUTION_PATH: '.'
   TEST_PROJECT: './xTEST_Cours1_SGBD/xTEST_Cours1_SGBD.csproj'
-  EnableWindowsTargeting: 'true'
+  EnableWindowsTargeting: 'true'         # <- Added this line
 
 jobs:
   restore:
     name: Restore
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
   build:
     name: Build
     needs: restore
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
   test:
     name: Test (with coverage)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest                # <- changed from windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,13 +90,7 @@ jobs:
           restore-keys: nuget-packages-${{ runner.os }}-
 
       - name: Run tests and collect coverage
-        run: |
-          dotnet test ${{ env.TEST_PROJECT }} \
-            --configuration Release \
-            --verbosity normal \
-            --logger "trx;LogFileName=test_results.trx" \
-            --results-directory ./test-results \
-            --collect:"XPlat Code Coverage"
+        run: dotnet test ${{ env.TEST_PROJECT }} --configuration Release --verbosity normal --logger "trx;LogFileName=test_results.trx" --results-directory ./test-results --collect:"XPlat Code Cov[...]
 
       - name: Locate coverage file (PowerShell)
         if: always()
@@ -110,7 +104,6 @@ jobs:
           } else {
             Write-Host "No coverage.cobertura.xml found"
           }
-
       - name: Install ReportGenerator and produce HTML report
         if: always()
         shell: pwsh
@@ -122,7 +115,6 @@ jobs:
           } else {
             Write-Host "Skipping HTML report generation: coverage file missing"
           }
-
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -131,7 +123,6 @@ jobs:
           path: |
             coverage/coverage.cobertura.xml
             coverage-report/**
-
       - name: Upload test results artifact (trx)
         if: always()
         uses: actions/upload-artifact@v4
