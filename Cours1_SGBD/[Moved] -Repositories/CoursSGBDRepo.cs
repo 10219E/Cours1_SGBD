@@ -9,10 +9,10 @@ using System.Reflection.PortableExecutable;
 using Microsoft.Extensions.Logging;
 using Cours1_SGBD.Interfaces;
 using System.Data;
-
+/*
 namespace Cours1_SGBD.Repositories
 {
-    /*public class CoursSGBDRepo
+    ///public class CoursSGBDRepo
 {
 
     public List<Student> GetStudents()
@@ -26,7 +26,7 @@ namespace Cours1_SGBD.Repositories
 
         return list;
     }
-}*/
+}////
     public class CoursSGBDRepo : GetFile, ICoursSGBDRepo
     {
 
@@ -154,7 +154,7 @@ namespace Cours1_SGBD.Repositories
                     {
                         var student = new UI_Student
                         {
-                            /*
+                            ////
                             id = (int)reader["ID"],
                             fname = reader["First Name"].ToString(),
                             lname = reader["Last Name"].ToString(),
@@ -162,7 +162,7 @@ namespace Cours1_SGBD.Repositories
                             phone = reader["Mobile"].ToString(),
                             confirmed = Convert.ToDateTime(reader["Confirmed"]),
                             section = reader["Section"] == DBNull.Value ? "" : reader["Section"].ToString()
-                            */
+                            ////
 
                             id = reader.GetInt32(reader.GetOrdinal("ID")),
 
@@ -315,4 +315,4 @@ namespace Cours1_SGBD.Repositories
     }
 
 
-}
+}*/

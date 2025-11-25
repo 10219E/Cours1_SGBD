@@ -81,8 +81,6 @@ namespace RepositoryDLL.RepoSvc
 
         public List<UI_StudioStudent> FindStudioDb(string search)
         {
-
-            throw new NotImplementedException();
             var single_studio = new List<UI_StudioStudent>();
             string query = GetFileContent("RepositoryDLL.Repositories.SQL.FIND_STUDENT.sql");
 

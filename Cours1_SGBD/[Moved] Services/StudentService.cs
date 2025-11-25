@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/*
 namespace Cours1_SGBD.Services
 {
     public class StudentService : IStudentService
@@ -75,3 +76,4 @@ namespace Cours1_SGBD.Services
         }
     }
 }
+*/
