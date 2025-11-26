@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 public class StudioGridForm : Form
 {
-    private List<UI_StudioStudent> studios;
+    //private List<UI_StudioStudent> studios;
 
     public StudioGridForm(List<UI_StudioStudent> studios)
     {

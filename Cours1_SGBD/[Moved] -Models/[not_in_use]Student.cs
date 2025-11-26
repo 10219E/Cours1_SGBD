@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+/*using System.Threading.Tasks;
 
 namespace Cours1_SGBD.Models
 {
@@ -17,4 +17,4 @@ namespace Cours1_SGBD.Models
         internal DateTime confirmed;
         internal string section;
     }
-}
+}*/

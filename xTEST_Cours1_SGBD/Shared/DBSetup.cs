@@ -26,7 +26,9 @@ namespace xTEST_Cours1_SGBD.Shared
 
 
         public static async Task DropDataBase()
-        { }
+        {
+            throw new NotImplementedException();
+        }
 
         private async Task ExecuteSqlScript(string filepath)
         {

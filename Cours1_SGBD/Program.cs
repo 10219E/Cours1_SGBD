@@ -26,7 +26,7 @@ namespace Cours1_SGBD
     class Program
     {
         private static List<UI_Student> student;
-        private static List<UI_Student> ui_student;
+        //private static List<UI_Student> ui_student;
         private static List<UI_StudioStudent> studio_student;
 
         //private static List<StudentsToInsert> insert_student;

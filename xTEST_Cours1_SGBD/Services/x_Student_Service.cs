@@ -230,7 +230,7 @@ namespace xTEST_Cours1_SGBD.Services
         public void x_DeleteStudentSvc(int id, string fname, string lname)
         {
             //Arrange
-            var id_todelete = 003;
+            //var id_todelete = 003;
 
             mock_students.Add(new UI_Student { id = id, fname = fname, lname = lname});
 

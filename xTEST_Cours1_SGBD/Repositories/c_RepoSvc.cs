@@ -157,7 +157,6 @@ namespace xTEST_Cours1_SGBD.Repositories
 
             // Assert: stable checks by id, not by index
             Assert.Empty(verif);
-            Assert.Equal(0, verif.Count());
 
 
         }

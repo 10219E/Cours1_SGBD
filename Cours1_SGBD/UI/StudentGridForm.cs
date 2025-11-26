@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 public class StudentGridForm : Form
 {
-    private List<UI_Student> students;
+    //private List<UI_Student> students;
 
     public StudentGridForm(List<UI_Student> students)
     {
