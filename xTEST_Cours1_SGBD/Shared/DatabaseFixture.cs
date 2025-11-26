@@ -31,7 +31,7 @@ namespace xTEST_Cours1_SGBD.Shared
             await _dbSetup.CreateTablesDataBase();
             ConnectionString = _container.GetConnectionString().Replace("master", "xTEST_SGBD_C");
             // initial seed so read tests can run immediately
-            await _dbSetup.SeedDataBase();
+            await _dbSetup.SeedStudents();
         }
 
         public async Task DisposeAsync()
@@ -44,7 +44,8 @@ namespace xTEST_Cours1_SGBD.Shared
         }
 
         // Public convenience method for tests.
-        public Task SeedDataBase() => _dbSetup.SeedDataBase();
+        public Task SeedStudents() => _dbSetup.SeedStudents();
+        public Task SeedStudio() => _dbSetup.SeedStudio();
     }
 
     /// <summary>

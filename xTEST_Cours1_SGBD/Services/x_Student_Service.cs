@@ -17,6 +17,7 @@ namespace xTEST_Cours1_SGBD.Services
     public class x_Student_Service
     {
         Mock<ICoursSGBDRepo> _mockService; //on réutilise le Repo de notre projet
+        Mock<IStudioRepo> _mockStudio; //mock pour le studio si besoin
         IStudentService _service;
         private List<UI_Student> mock_students;
         private List<StudentsToInsert> mock_insert = new List<StudentsToInsert>();
@@ -25,6 +26,7 @@ namespace xTEST_Cours1_SGBD.Services
         public x_Student_Service()
         {
             _mockService = new Mock<ICoursSGBDRepo>();
+            _mockStudio = new Mock<IStudioRepo>();
 
             //Définition Etudiants Mockés --définis plus haut (Pas utilisé pour le INSERT car on reset la liste)
             mock_students = new List<UI_Student>()
@@ -59,7 +61,7 @@ namespace xTEST_Cours1_SGBD.Services
         {
             //Arrange
             _mockService.Setup(repo => repo.GetStudentsDb()).Returns(mock_students);
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             //Act
             var result = _service.GetStudentsSvc();
@@ -91,7 +93,7 @@ namespace xTEST_Cours1_SGBD.Services
             _mockService.Setup(r => r.FindStudentDb("Jane")) //Testing search by first name (expected single result)
                 .Returns(mock_students.Where(s => s.fname == "Jane").ToList());
 
-            _service = new StudentService(_mockService.Object); //Initialize service with mocked repo
+            _service = new StudentService(_mockService.Object, _mockStudio.Object); //Initialize service with mocked repo
 
             // Act & Assert 1: Search by id string with leading zeros
             var resultById = _service.FindStudentSvc("002");
@@ -143,7 +145,7 @@ namespace xTEST_Cours1_SGBD.Services
 
             _mockService.Setup(repo => repo.UpdateStudentDb(id_toupdate, updatedStudent));
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             //Act
             _service.UpdateStudentSvc(id_toupdate, updatedStudent);
@@ -200,7 +202,7 @@ namespace xTEST_Cours1_SGBD.Services
 
             Console.WriteLine($"Mock Insert count : {mock_insert.Count}"); //prints to output - Tests
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             //Act
             _service.InsertStudentSvc(insert);
@@ -237,7 +239,7 @@ namespace xTEST_Cours1_SGBD.Services
                     .Callback<int>(deletedId => mock_students.RemoveAll(s => s.id == deletedId))
                     .Verifiable(); //simulate deletion in the mock list
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
 
             //Assert Before
