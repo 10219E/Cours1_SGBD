@@ -12,6 +12,7 @@
     <EmbeddedResource Include="Repositories\SQL\FIND_STUDENT.sql" />
     <EmbeddedResource Include="Repositories\SQL\INSERT_STUDENT.sql" />
     <EmbeddedResource Include="Repositories\SQL\LIST_STUDENTS.sql" />
+    <EmbeddedResource Include="Repositories\SQL\LIST_STUDIO.sql" />
     <EmbeddedResource Include="Repositories\SQL\UPDATE_STUDENT.sql" />
   </ItemGroup>
 

@@ -12,12 +12,14 @@ namespace xTEST_Cours1_SGBD.Services
     public class x_Err_Student_Service
     {
         Mock<ICoursSGBDRepo> _mockService; //on réutilise le Repo de notre projet
+        Mock<IStudioRepo> _mockStudio; //mock pour le studio si besoin
         IStudentService _service;
 
 
         public x_Err_Student_Service()
         {
             _mockService = new Mock<ICoursSGBDRepo>();
+            _mockStudio = new Mock<IStudioRepo>();
         }
 
         [Fact]
@@ -30,7 +32,7 @@ namespace xTEST_Cours1_SGBD.Services
             _mockService.Setup(repo => repo.DeleteStudentDb(id_notfound))
                         .Throws(new KeyNotFoundException("Student not found"));
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             // Act & Assert
             Assert.Throws<KeyNotFoundException>(() => _service.DeleteStudentSvc(id_notfound));
@@ -52,7 +54,7 @@ namespace xTEST_Cours1_SGBD.Services
             _mockService.Setup(r => r.FindStudentDb("Ghost")) // prénom n'existe pas
                         .Throws(new InvalidOperationException("Not found"));
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             // Act & Assert 1: par id (string)
             Assert.Throws<InvalidOperationException>(() => _service.FindStudentSvc("999"));
@@ -80,7 +82,7 @@ namespace xTEST_Cours1_SGBD.Services
             _mockService.Setup(repo => repo.UpdateStudentDb(id_notfound, It.IsAny<StudentUpdate>()))
                         .Throws(new KeyNotFoundException("Student not found"));
 
-            _service = new StudentService(_mockService.Object);
+            _service = new StudentService(_mockService.Object, _mockStudio.Object);
 
             // Act & Assert
             Assert.Throws<KeyNotFoundException>(() => _service.UpdateStudentSvc(id_notfound, updatedStudent));

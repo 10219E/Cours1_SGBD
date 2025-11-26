@@ -16,6 +16,7 @@
   <ItemGroup>
     <EmbeddedResource Include="SQL\CreateDatabase.sql" />
     <EmbeddedResource Include="SQL\CreateTables.sql" />
+    <EmbeddedResource Include="SQL\InitBaseStudio.sql" />
     <EmbeddedResource Include="SQL\InitBaseStudents.sql" />
   </ItemGroup>
 

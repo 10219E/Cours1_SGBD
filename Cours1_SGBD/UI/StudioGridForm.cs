@@ -6,21 +6,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class StudentGridForm : Form
+public class StudioGridForm : Form
 {
-    //private List<UI_Student> students;
+    //private List<UI_StudioStudent> studios;
 
-    public StudentGridForm(List<UI_Student> students)
+    public StudioGridForm(List<UI_StudioStudent> studios)
     {
         var dgv = new DataGridView
         {
             Dock = DockStyle.Fill,
             ReadOnly = true,
             AutoGenerateColumns = true,
-            DataSource = new BindingList<UI_Student>(students)
+            DataSource = new BindingList<UI_StudioStudent>(studios)
         };
         Controls.Add(dgv);
-        Text = "Students";
+        Text = "Studios";
         Width = 900;
         Height = 400;
     }

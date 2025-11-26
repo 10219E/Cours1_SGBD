@@ -26,7 +26,8 @@ namespace Cours1_SGBD
     class Program
     {
         private static List<UI_Student> student;
-        private static List<UI_Student> ui_student;
+        //private static List<UI_Student> ui_student;
+        private static List<UI_StudioStudent> studio_student;
 
         //private static List<StudentsToInsert> insert_student;
         //private static List<StudentUpdate> fields_toupdate;
@@ -58,15 +59,16 @@ namespace Cours1_SGBD
 
                 Console.WriteLine("Choose an operation:");
                 Console.WriteLine("1 - View All Students (SELECT)");
-                Console.WriteLine("2 - Find Student (FIND)");
-                Console.WriteLine("3 - Insert New Student (INSERT)");
-                Console.WriteLine("4 - Delete Student (DELETE)");
-                Console.WriteLine("5 - Update Student (UPDATE)");
+                Console.WriteLine("2 - View Studio Students");
+                Console.WriteLine("3 - Find Student (FIND)");
+                Console.WriteLine("4 - Insert New Student (INSERT)");
+                Console.WriteLine("5 - Delete Student (DELETE)");
+                Console.WriteLine("6 - Update Student (UPDATE)");
                 Console.WriteLine("0 - Exit");
 
                 Console.Write("Enter your choice: ");
                 var input = Console.ReadLine();
-                if (!new[] { "0", "1", "2", "3", "4", "5" }.Contains(input))  //ARRAY WITH POSSIBLE CHOICES - SHORTER THAN OR, AND, ETC
+                if (!new[] { "0", "1", "2", "3", "4", "5", "6" }.Contains(input))  //ARRAY WITH POSSIBLE CHOICES - SHORTER THAN OR, AND, ETC
                 {
                     Console.WriteLine("Invalid choice. Please select the correct option.");
                     continue; // Skip the rest of the loop and prompt again
@@ -85,7 +87,7 @@ namespace Cours1_SGBD
                             break;
 
                         //FIND
-                        case "2":
+                        case "3":
                             Console.Write("Enter search term (ID, First or Last name): ");
                             var search = Console.ReadLine() ?? string.Empty;
                             var foundStudents = studentService.FindStudentSvc(search);
@@ -110,7 +112,7 @@ namespace Cours1_SGBD
                             }
                             break;
 
-                        //SELECT
+                        //SELECT ALL STUDENTS
                         case "1":
 
                             student = studentService.GetStudentsSvc();
@@ -124,8 +126,22 @@ namespace Cours1_SGBD
                             //PauseAndClear();
                             break;
 
+                        //REVIEW STUDIO STUDENTS
+                        case "2":
+
+                            studio_student = studentService.GetStudioSvc();
+
+                            logger.LogInformation("Retrieved all studio information from the database.");
+                            //ShowStudentsInGrid(student);
+
+                            ShowStudioInGrid(studio_student, formClosedSignal);
+                            formClosedSignal.Wait();
+                            Console.Clear();
+                            //PauseAndClear();
+                            break;
+
                         //INSERT
-                        case "3":
+                        case "4":
                             // assign to the existing variable name
                             insert_student = PromptForInsertStudent();
 
@@ -135,7 +151,7 @@ namespace Cours1_SGBD
                             break;
 
                         //DELETE
-                        case "4":
+                        case "5":
                             Console.Write("Enter the ID of the student to delete: ");
                             student_id = Console.ReadLine();
                             if (!int.TryParse(student_id, out var id_to_delete))
@@ -151,7 +167,7 @@ namespace Cours1_SGBD
                             break;
   
                         //UPDATE
-                        case "5":
+                        case "6":
                             Console.Write("Enter the ID of the student to update: ");
                             student_id = Console.ReadLine();
                             if (!int.TryParse(student_id, out var id_to_update))
@@ -191,7 +207,8 @@ namespace Cours1_SGBD
 
             services.AddLogging(configure => configure.AddConsole())
                     .AddSingleton<ICoursSGBDRepo, RepoSvc>()
-                    .AddSingleton<IStudentService, StudentService>();
+                    .AddSingleton<IStudentService, StudentService>()
+                    .AddSingleton<IStudioRepo, StudioRepoSvc>();
 
             return services.BuildServiceProvider();
         }
@@ -264,6 +281,28 @@ namespace Cours1_SGBD
                 Application.SetCompatibleTextRenderingDefault(false);
 
                 var form = new StudentGridForm(students);
+                if (formClosedSignal != null)
+                {
+                    form.FormClosed += (s, e) => formClosedSignal.Set();
+                }
+
+                Application.Run(form);
+            });
+            t.SetApartmentState(ApartmentState.STA);
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        static void ShowStudioInGrid(List<UI_StudioStudent> studios, ManualResetEventSlim? formClosedSignal = null)
+        {
+            var t = new Thread(() =>
+            {
+                // Initialize WinForms on this STA thread (replacement for ApplicationConfiguration.Initialize)
+                Application.SetHighDpiMode(HighDpiMode.SystemAware);
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+
+                var form = new StudioGridForm(studios);
                 if (formClosedSignal != null)
                 {
                     form.FormClosed += (s, e) => formClosedSignal.Set();

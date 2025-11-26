@@ -20,11 +20,15 @@ namespace xTEST_Cours1_SGBD.Shared
 
         public async Task CreateTablesDataBase() => await ExecuteSqlScript("xTEST_Cours1_SGBD.SQL.CreateTables.sql");
 
-        public async Task SeedDataBase() => await ExecuteSqlScript("xTEST_Cours1_SGBD.SQL.InitBaseStudents.sql");   
+        public async Task SeedStudents() => await ExecuteSqlScript("xTEST_Cours1_SGBD.SQL.InitBaseStudents.sql");
+        
+        public async Task SeedStudio() => await ExecuteSqlScript("xTEST_Cours1_SGBD.SQL.InitBaseStudio.sql");
 
 
         public static async Task DropDataBase()
-        { }
+        {
+            throw new NotImplementedException();
+        }
 
         private async Task ExecuteSqlScript(string filepath)
         {

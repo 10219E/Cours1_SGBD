@@ -21,7 +21,7 @@ namespace xTEST_Cours1_SGBD.Repositories
         [Fact]
         public async Task x_TestGetStudentsDb()
         {
-            await _fixture.SeedDataBase(); // seed with initial data
+            await _fixture.SeedStudents(); // seed with initial data
 
             // quick connection check (optional) — still part of Arrange
             await using var connection = new SqlConnection(_fixture.ConnectionString);
@@ -48,7 +48,7 @@ namespace xTEST_Cours1_SGBD.Repositories
         [InlineData("NonExistingName", 0)]
         public async Task x_TestFindStudentDb(string search, int expect_count)
         {
-            await _fixture.SeedDataBase(); // seed with initial data
+            await _fixture.SeedStudents(); // seed with initial data
 
             // quick connection check (optional) — still part of Arrange
             await using var connection = new SqlConnection(_fixture.ConnectionString);
@@ -73,7 +73,7 @@ namespace xTEST_Cours1_SGBD.Repositories
                 lname = "Mark"
             };
 
-            await _fixture.SeedDataBase(); // seed with initial data
+            await _fixture.SeedStudents(); // seed with initial data
 
             // quick connection check (optional) — still part of Arrange
             await using var connection = new SqlConnection(_fixture.ConnectionString);
@@ -110,7 +110,7 @@ namespace xTEST_Cours1_SGBD.Repositories
                 confirmed = DateTime.Now
             };
 
-            await _fixture.SeedDataBase(); // seed with initial data
+            await _fixture.SeedStudents(); // seed with initial data
 
             // quick connection check (optional) — still part of Arrange
             await using var connection = new SqlConnection(_fixture.ConnectionString);
@@ -139,7 +139,7 @@ namespace xTEST_Cours1_SGBD.Repositories
         public async Task x_DeleteStudentDb(int id)
         {
 
-            await _fixture.SeedDataBase(); // seed with initial data
+            await _fixture.SeedStudents(); // seed with initial data
 
             // quick connection check (optional) — still part of Arrange
             await using var connection = new SqlConnection(_fixture.ConnectionString);
@@ -157,7 +157,6 @@ namespace xTEST_Cours1_SGBD.Repositories
 
             // Assert: stable checks by id, not by index
             Assert.Empty(verif);
-            Assert.Equal(0, verif.Count());
 
 
         }
