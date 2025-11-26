@@ -32,6 +32,11 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Create ConnectionString for tests
+      	run: | 
+	  mkdir -p Repository/Repositories/SQL
+	  echo "Server=localhost;Database=TestDB;User Id=test;Password=;TrustServerCertificate=True" >Repository/Repositories/SQL/ConnectionString.txt	
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
