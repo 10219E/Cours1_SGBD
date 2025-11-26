@@ -32,6 +32,12 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Create ConnectionString for tests
+        shell: pwsh
+        run: |
+          New-Item -Path "Repository/Repositories/SQL" -ItemType Directory -Force
+          "Server=localhost;Database=TestDB;User Id=test;Password=;TrustServerCertificate=True" | Out-File -FilePath "Repository/Repositories/SQL/ConnectionString.txt" -Encoding UTF8
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -55,6 +61,12 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Create ConnectionString for tests
+        shell: pwsh
+        run: |
+          New-Item -Path "Repository/Repositories/SQL" -ItemType Directory -Force
+          "Server=localhost;Database=TestDB;User Id=test;Password=;TrustServerCertificate=True" | Out-File -FilePath "Repository/Repositories/SQL/ConnectionString.txt" -Encoding UTF8
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -74,6 +86,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Create ConnectionString for tests
+        run: |
+          mkdir -p Repository/Repositories/SQL
+          echo "Server=localhost;Database=TestDB;User Id=test;Password=;TrustServerCertificate=True" > Repository/Repositories/SQL/ConnectionString.txt
 
       - name: Patch test project for Linux (remove WinForms refs / TFMs)
         run: |
@@ -105,6 +122,7 @@ jobs:
               tree.write(fp, encoding='utf-8', xml_declaration=True)
               print("Patched csproj for Linux")
           PY
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -128,6 +146,7 @@ jobs:
             --logger "trx;LogFileName=test_results.trx" \
             --results-directory ./test-results \
             --collect:"XPlat Code Coverage"
+
       - name: Locate coverage file
         if: always()
         run: |
@@ -137,6 +156,7 @@ jobs:
             cp "$cov" coverage/coverage.cobertura.xml
             echo "Coverage found: $cov"
           fi
+
       - name: Install ReportGenerator
         if: always()
         run: |
@@ -145,6 +165,7 @@ jobs:
           if [ -f coverage/coverage.cobertura.xml ]; then
             reportgenerator -reports:coverage/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
           fi
+
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -153,6 +174,7 @@ jobs:
           path: |
             coverage/
             coverage-report/
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

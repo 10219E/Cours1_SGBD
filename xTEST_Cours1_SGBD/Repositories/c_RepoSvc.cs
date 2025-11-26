@@ -43,8 +43,8 @@ namespace xTEST_Cours1_SGBD.Repositories
 
 
         [Theory]
-        [InlineData("Robert", 2)]
-        [InlineData("Paul", 1)]
+        [InlineData("Jean", 2)]
+        [InlineData("Amina", 1)]
         [InlineData("NonExistingName", 0)]
         public async Task x_TestFindStudentDb(string search, int expect_count)
         {
