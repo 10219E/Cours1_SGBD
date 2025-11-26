@@ -10,8 +10,8 @@
 *.userosscache
 *.sln.docstates
 
-#Connection String
-Repository/Repositories/SQL/ConnectionString.txt
+#Connection String Ignore (protect)
+**/ConnectionString.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
