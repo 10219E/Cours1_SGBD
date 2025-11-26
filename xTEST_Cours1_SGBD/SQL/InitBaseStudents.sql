@@ -12,10 +12,10 @@ INSERT INTO [dbo].[Students] (
   [Section],
   [Confirmed]
 ) VALUES
-(2, 'Paul',  'Mlkv',  'pmlkv@ephec.be', '+32499887711166', 'IT4', '2025-09-12'),
-(3, 'Robert','Mark',  'rmark@ephec.be', NULL,                'IT2', '2025-09-16'),
-(4, 'Carla', 'Robert','crobert@ephec.be','661562',           'MA3', '2025-09-16'),
-(6, 'Bayne', 'Karl',  'kbayne@ep.com',   '+3200292',         'MA1', '2025-10-03'),
-(9, 'Lisa',  'Mocha', 'lmocha@ep.com',  '+32002921111',     'MA1', '2025-10-03');
+(2, 'Amina',     'Hassan',     'ahassan@ep.com',      '+32499123456', 'IT4', '2025-09-12'),
+(3, 'Jean',      'Dupont',     'jdupont@ep.com',      '+32477654321', 'IT2', '2025-09-16'),
+(4, 'Sofia',     'Jean',  'srodriguez@ep.com',   '+32488765432', 'MA3', '2025-09-16'),
+(6, 'Raj',       'Patel',      'rpatel@ep.com',       '+32495876543', 'MA1', '2025-10-03'),
+(9, 'Yuki',      'Tanaka',     'ytanaka@ep.com',      '+32476987654', 'MA1', '2025-10-03');
 
 SET IDENTITY_INSERT [dbo].[Students] OFF;
