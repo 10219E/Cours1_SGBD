@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Repositories\SQL\LIST_STUDIO.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Repositories\SQL\ConnectionString.txt" />
     <EmbeddedResource Include="Repositories\SQL\DELETE_STUDENT.sql" />
     <EmbeddedResource Include="Repositories\SQL\FIND_STUDENT.sql" />
