@@ -41,7 +41,8 @@ namespace Cours1_SGBD
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>(); //CREATE LOGGER
 
 
-            var studentService = serviceProvider.GetRequiredService<IStudentService>(); //CALL LOGGER INJECT
+            var studentService = serviceProvider.GetRequiredService<IStudentService>(); //GET STUDENT SERVICE
+            var studioService = serviceProvider.GetRequiredService<IStudioService>(); //GET STUDIO SERVICE
 
             logger.LogInformation("Application Starting");
             Thread.Sleep(50); //LET LOGGER PRINT BEFORE OTHER THINGS
@@ -129,7 +130,7 @@ namespace Cours1_SGBD
                         //REVIEW STUDIO STUDENTS
                         case "2":
 
-                            studio_student = studentService.GetStudioSvc();
+                            studio_student = studioService.GetStudioSvc();
 
                             logger.LogInformation("Retrieved all studio information from the database.");
                             //ShowStudentsInGrid(student);
@@ -208,6 +209,7 @@ namespace Cours1_SGBD
             services.AddLogging(configure => configure.AddConsole())
                     .AddSingleton<ICoursSGBDRepo, RepoSvc>()
                     .AddSingleton<IStudentService, StudentService>()
+                    .AddSingleton<IStudioService, StudioService>()
                     .AddSingleton<IStudioRepo, StudioRepoSvc>();
 
             return services.BuildServiceProvider();

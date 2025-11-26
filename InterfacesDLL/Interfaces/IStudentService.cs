@@ -13,8 +13,6 @@ namespace InterfacesDLL.Interfaces
 
         List<ModelsDLL.Models.UI_Student> FindStudentSvc(string search);
 
-        List<ModelsDLL.Models.UI_StudioStudent> GetStudioSvc();
-
         void UpdateStudentSvc(int id, ModelsDLL.Models.StudentUpdate updatedStudent);
 
         void InsertStudentSvc(ModelsDLL.Models.StudentsToInsert insert_student);
